@@ -32,5 +32,4 @@ Open `http://localhost:5173` in your browser.
 - **Geospatial UI**: Interactive Leaflet map with grid-based risk layers.
 - **Decision Support**: Explainable AI panel and "What-if" simulation.
 
----
-Built with Antigravity 🧠
+
