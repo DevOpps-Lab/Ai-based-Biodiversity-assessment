@@ -291,9 +291,9 @@ const SatelliteAnalysis = ({ analysisData, onClose }) => {
                 .satellite-modal-overlay {
                     position: fixed;
                     inset: 0;
-                    background: rgba(0, 0, 0, 0.85);
-                    backdrop-filter: blur(10px);
-                    z-index: 1000;
+                    background: rgba(0, 0, 0, 0.9);
+                    backdrop-filter: blur(15px);
+                    z-index: 2000;
                     display: flex;
                     align-items: center;
                     justify-content: center;
