@@ -1,35 +1,32 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { X, Activity, BarChart3, AlertTriangle, Layers, Cpu, Compass, Zap, HelpCircle, Loader2, Calendar, Target, Scan, Eye } from 'lucide-react';
+import { X, Activity, BarChart3, AlertTriangle, Layers, Cpu, Compass, Zap, HelpCircle, Loader2, Calendar, Target, Scan, Eye, ChevronRight, Binary, Globe } from 'lucide-react';
 
 const SatelliteAnalysis = ({ analysisData, onClose }) => {
     const [mode, setMode] = useState('evolution');
     const [selectedYear, setSelectedYear] = useState(2024);
-    const [sliderValue, setSliderValue] = useState(50);
+    const [comparisonSlider, setComparisonSlider] = useState(50);
     const [policySliders, setPolicySliders] = useState({ urban: 30, conservation: 20 });
     const [activeBand, setActiveBand] = useState('RGB');
     const [terminalLogs, setTerminalLogs] = useState([]);
 
-    // NEW INTELLIGENCE FEATURES
+    // UI REFINEMENTS
     const [lensState, setLensState] = useState({ x: 0, y: 0, active: false });
-    const [showHologram, setShowHologram] = useState(true);
-    const [narrationBatch, setNarrationBatch] = useState(0);
-
+    const [isSyncing, setIsSyncing] = useState(true);
     const [loadStatus, setLoadStatus] = useState({ baseline: false, comparison: false });
     const [useDemoFallback, setUseDemoFallback] = useState(false);
 
     const terminalRef = useRef(null);
-    const containerRef = useRef(null);
+    const viewPortRef = useRef(null);
 
     const lat = analysisData?.location?.lat || 13.0827;
     const lng = analysisData?.location?.lng || 80.2707;
 
+    // PROVIDER ABSTRACTION
     const getSatelliteUrl = (year, isBaseline = false, forceBand = null) => {
         if (useDemoFallback) return (isBaseline || year >= 2024) ? "/satellite/present.png" : "/satellite/past.png";
-
         let bandParam = '&l=sat';
-        if (forceBand === 'THERMAL') bandParam = '&l=sat,skl'; // Emulating thermal with skeleton overlay
-        if (forceBand === 'NDVI') bandParam = '&l=sat&type=map'; // Emulating NDVI with map blend
-
+        if (forceBand === 'THERMAL') bandParam = '&l=sat,skl';
+        if (forceBand === 'NDVI') bandParam = '&l=sat&type=map';
         if (year >= 2024) return `https://static-maps.yandex.ru/1.x/?ll=${lng},${lat}&z=14${bandParam}&size=600,450`;
         return `https://static-maps.yandex.ru/1.x/?ll=${lng},${lat}&z=13${bandParam}&size=600,450`;
     };
@@ -38,18 +35,14 @@ const SatelliteAnalysis = ({ analysisData, onClose }) => {
     const imgHistorical = useMemo(() => getSatelliteUrl(selectedYear), [lat, lng, selectedYear, useDemoFallback]);
     const imgSpectral = useMemo(() => getSatelliteUrl(2024, true, activeBand === 'RGB' ? 'NDVI' : activeBand), [lat, lng, activeBand, useDemoFallback]);
 
-    // X-RAY LENS TRACKING
-    const handleMouseMove = (e) => {
-        if (!containerRef.current) return;
-        const rect = containerRef.current.getBoundingClientRect();
-        setLensState({
-            x: e.clientX - rect.left,
-            y: e.clientY - rect.top,
-            active: true
-        });
+    // LENS TRACKING
+    const handleViewportMove = (e) => {
+        if (!viewPortRef.current) return;
+        const rect = viewPortRef.current.getBoundingClientRect();
+        setLensState({ x: e.clientX - rect.left, y: e.clientY - rect.top, active: true });
     };
 
-    // LIFECYCLE: Reset comparison on parameter change
+    // SYNC LIFECYCLE
     useEffect(() => {
         setLoadStatus(p => ({ ...p, comparison: false }));
         const t = setTimeout(() => setLoadStatus(p => ({ ...p, comparison: true })), 4000);
@@ -62,297 +55,228 @@ const SatelliteAnalysis = ({ analysisData, onClose }) => {
         return () => clearTimeout(t);
     }, [lat, lng]);
 
-    // AI BIO-INTELLIGENCE NARRATION
+    // AI NARRATION ENGINE
     useEffect(() => {
         const getNarrative = () => {
             const urban = policySliders.urban;
             const conservation = policySliders.conservation;
-
             if (mode === 'projection') {
-                if (urban > 70) return "WARNING: Aggressive urban expansion detected. Predictive models show total fragmentation of existing wildlife corridors by 2031.";
-                if (conservation > 70) return "OPTIMISM: Significant reforestation efforts in this projection are restoring canopy connectivity to 1990 levels.";
-                return "SIMULATION: Evaluating the delicate equilibrium between anthropogenic pressure and ecological resilience.";
+                if (urban > 60) return "DANGER: Structural displacement in ecosystem matrix. Habitat corridors are reaching critical fragmentation thresholds.";
+                if (conservation > 60) return "RESTORE: Biogenic signatures are expanding. Neural models detect successful canopy reconnection in 80% of sectors.";
+                return "SIMULATING: Running GAEA-ML models to synthesize anthropogenic-ecological equilibrium for 2035 window.";
             }
-
-            if (selectedYear < 2012) return "ARCHIVE: Analyzing the 'Silver-Leaf' era. Notice the dense vegetation baseline before the 2015 development spike.";
-            if (selectedYear > 2020) return "RECENT: Monitoring the stabilization of urban boundaries relative to current conservation policy.";
-            return "ANALYSIS: Temporal drift established. Synthesizing spatial shifts across the bi-temporal baseline.";
+            if (selectedYear < 2015) return "HISTORICAL: Accessing vintage orbital archives. Spectral signatures show a 34.2% higher canopy density than 2024 baseline.";
+            return "SYNCING: Aligning bi-temporal orbital feeds. Spatial reasoning in progress for sector [80.27E, 13.08N].";
         };
 
-        const addNarrativeLog = () => {
+        const addLog = () => {
             const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            setTerminalLogs(prev => [...prev.slice(-15), {
-                timestamp,
-                msg: getNarrative(),
-                isNarrative: true
-            }]);
+            setTerminalLogs(prev => [...prev.slice(-12), { timestamp, msg: getNarrative(), isIntel: true }]);
         };
 
-        const interval = setInterval(() => {
-            addNarrativeLog();
-            setNarrationBatch(b => b + 1);
-        }, 8000);
-
-        // Initial log
-        addNarrativeLog();
-
+        addLog();
+        const interval = setInterval(addLog, 12000);
         return () => clearInterval(interval);
-    }, [mode, selectedYear, policySliders.urban, policySliders.conservation]);
+    }, [mode, selectedYear, policySliders]);
+
+    useEffect(() => {
+        if (terminalRef.current) terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+    }, [terminalLogs]);
 
     const isSim = mode === 'projection';
     const metrics = useMemo(() => {
         if (!isSim) {
-            const yearDiff = 2024 - Math.min(2024, selectedYear);
+            const diff = 2024 - Math.min(2024, selectedYear);
             return [
-                { label: 'Tree Cover', value: `${(78.3 + yearDiff * 1.5).toFixed(1)}%`, trend: 'up' },
-                { label: 'Urban Grid', value: `${Math.max(5, 40 - (yearDiff * 2.2)).toFixed(1)}%`, trend: 'down' },
-                { label: 'NDVI (Avg)', value: (0.75 + (yearDiff * 0.01)).toFixed(3), trend: 'up' },
-                { label: 'Biosphere Status', value: selectedYear < 2015 ? 'VIBRANT' : 'STRESSED', trend: 'neutral' }
-            ];
-        } else {
-            const urbanFactor = policySliders.urban / 100;
-            const conservationFactor = policySliders.conservation / 100;
-            const habitatLoss = (urbanFactor * 60) - (conservationFactor * 25);
-            return [
-                { label: '2035 Habitat', value: `${Math.max(2, 78.3 - habitatLoss).toFixed(1)}%`, trend: 'down' },
-                { label: 'Survival Index', value: (7.5 - ((urbanFactor * 4) - (conservationFactor * 2))).toFixed(1), trend: 'down' },
-                { label: 'Thermal Delta', value: `+${((urbanFactor * 4) - (conservationFactor * 1.5)).toFixed(1)}°C`, trend: 'down' },
-                { label: 'Causal Risk', value: habitatLoss > 30 ? 'ELEVATED' : 'STABLE', trend: 'down' }
+                { label: 'Canopy Density', value: `${(78.3 + diff * 1.5).toFixed(1)}%`, trend: 'up', icon: <Eye size={12} /> },
+                { label: 'Built Region', value: `${Math.max(5, 40 - (diff * 2.2)).toFixed(1)}%`, trend: 'down', icon: <Compass size={12} /> },
+                { label: 'NDVI Median', value: (0.75 + (diff * 0.01)).toFixed(3), trend: 'up', icon: <Activity size={12} /> }
             ];
         }
+        const u = policySliders.urban / 100;
+        const c = policySliders.conservation / 100;
+        const loss = (u * 60) - (c * 25);
+        return [
+            { label: '2035 Habitat', value: `${Math.max(2, 78.3 - loss).toFixed(1)}%`, trend: 'down', icon: <Zap size={12} /> },
+            { label: 'Survival Stat', value: (7.5 - ((u * 4) - (c * 2))).toFixed(1), trend: 'down', icon: <Activity size={12} /> },
+            { label: 'Heat Delta', value: `+${((u * 4) - (c * 1.5)).toFixed(1)}°C`, trend: 'down', icon: <AlertTriangle size={12} /> }
+        ];
     }, [isSim, selectedYear, policySliders]);
-
-    // Spectral lens helper
-    const getLensFilter = () => {
-        if (activeBand === 'THERMAL') return 'invert(1) hue-rotate(180deg) contrast(1.2)';
-        if (activeBand === 'NDVI') return 'sepia(1) hue-rotate(90deg) saturate(3) brightness(1.1)';
-        return 'saturate(2) brightness(1.2)'; // Enhanced RGB
-    };
 
     return (
         <div className="satellite-modal-overlay">
-            <div className="satellite-modal-content glass-panel" style={{ background: '#070c07', maxWidth: '1200px', border: '1px solid rgba(57, 255, 20, 0.3)' }}>
-                <div className="modal-header">
-                    <div className="header-info">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <div className="neural-chip-container">
-                                <Cpu size={28} className="text-neon-green" />
-                                <div className="pulse-ring"></div>
-                            </div>
-                            <div>
-                                <h2 style={{ letterSpacing: '3px', fontWeight: '900' }}>BIO-INTELLIGENCE TERMINAL v3.0</h2>
-                                <span className="location-tag">ORBITAL SECTOR: {lng.toFixed(3)}E | {lat.toFixed(3)}N | STATION_GAMMA</span>
-                            </div>
+            <div className="satellite-modal-content dashboard-layout glass-panel">
+
+                {/* HEADER SECTION */}
+                <div className="dashboard-header">
+                    <div className="header-left">
+                        <div className="intel-badge">
+                            <Binary size={18} />
+                            <span>GAEA INTELLIGENCE HUB</span>
                         </div>
+                        <h2>ECOLOGICAL DIGITAL TWIN <span className="version">v3.5</span></h2>
                     </div>
-                    <button className="close-btn" onClick={onClose}>
-                        <X size={24} />
-                    </button>
+                    <div className="header-right">
+                        <div className="coord-display">
+                            <Globe size={14} />
+                            <span>{lat.toFixed(4)}N, {lng.toFixed(4)}E</span>
+                        </div>
+                        <button className="close-dashboard" onClick={onClose}>
+                            <X size={20} />
+                        </button>
+                    </div>
                 </div>
 
-                <div className="modal-body">
-                    <div className="comparison-section">
-                        <div className="intelligence-toolbar mb-3">
-                            <div className="mode-toggle-group">
-                                <button className={`mode-btn ${mode === 'evolution' ? 'active' : ''}`} onClick={() => setMode('evolution')}>
-                                    <Calendar size={14} /> TEMPORAL DRIFT
-                                </button>
-                                <button className={`mode-btn ${mode === 'projection' ? 'active' : ''}`} onClick={() => setMode('projection')}>
-                                    <Zap size={14} /> CAUSAL PROJECTION
-                                </button>
+                <div className="dashboard-body">
+
+                    {/* LEFT PANEL: DATA VIEWPORT */}
+                    <div className="visual-viewport"
+                        ref={viewPortRef}
+                        onMouseMove={handleViewportMove}
+                        onMouseLeave={() => setLensState(p => ({ ...p, active: false }))}>
+
+                        <div className="viewport-tools">
+                            <div className="tool-pill">
+                                <Scan size={14} />
+                                <span>{isSim ? 'PREDICTIVE SIMULATION' : 'TEMPORAL DRIFT'}</span>
                             </div>
-                            <div className="visual-controls">
-                                <button className={`control-toggle ${showHologram ? 'active' : ''}`} onClick={() => setShowHologram(!showHologram)}>
-                                    <Scan size={14} /> HOLOGRAM
-                                </button>
-                                <div className="band-pill-group">
-                                    {['RGB', 'NDVI', 'THERMAL'].map(band => (
-                                        <button key={band} className={`band-pill ${activeBand === band ? 'active' : ''}`} onClick={() => setActiveBand(band)}>
-                                            {band}
-                                        </button>
-                                    ))}
-                                </div>
+                            <div className="band-tabs">
+                                {['RGB', 'NDVI', 'THERMAL'].map(b => (
+                                    <button key={b} className={activeBand === b ? 'active' : ''} onClick={() => setActiveBand(b)}>{b}</button>
+                                ))}
                             </div>
                         </div>
 
-                        {mode === 'evolution' && (
-                            <div className="timeline-selector card glass-panel mb-3">
-                                <div className="timeline-track-container" style={{ flex: 1 }}>
-                                    <input
-                                        type="range" min="2010" max="2024" step="1"
-                                        value={selectedYear > 2024 ? 2024 : selectedYear}
-                                        onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                                        className="timeline-slider"
-                                    />
-                                    <div className="timeline-years">
-                                        {[2010, 2014, 2018, 2021, 2024].map(y => (
-                                            <span key={y} className={selectedYear === y ? 'active' : ''}>{y}</span>
-                                        ))}
+                        {/* COMPARISON ENGINE */}
+                        <div className="viewport-imagery">
+                            {(!loadStatus.baseline || (mode === 'evolution' && !loadStatus.comparison)) && (
+                                <div className="orbital-sync-overlay">
+                                    <Loader2 className="animate-spin" size={32} />
+                                    <span>SYNCHRONIZING ORBITAL SECTOR...</span>
+                                </div>
+                            )}
+
+                            {/* NEURAL LENS overlay */}
+                            {lensState.active && (
+                                <div className="neural-lens" style={{
+                                    left: lensState.x, top: lensState.y,
+                                    backgroundImage: `url(${imgSpectral})`,
+                                    backgroundPosition: `-${lensState.x}px -${lensState.y}px`,
+                                    filter: activeBand === 'THERMAL' ? 'invert(1) hue-rotate(180deg) contrast(1.2)' :
+                                        activeBand === 'NDVI' ? 'sepia(1) hue-rotate(90deg) saturate(3)' : 'saturate(1.5)'
+                                }}>
+                                    <div className="lens-overlay">
+                                        <div className="lens-label">{activeBand} SCAN</div>
                                     </div>
                                 </div>
-                                <div className="year-display">{selectedYear}</div>
-                            </div>
-                        )}
-
-                        <div
-                            ref={containerRef}
-                            className="comparison-container intelligence-view"
-                            onMouseMove={handleMouseMove}
-                            onMouseLeave={() => setLensState(p => ({ ...p, active: false }))}
-                        >
-                            {(!loadStatus.baseline || (mode === 'evolution' && !loadStatus.comparison)) && (
-                                <div className="sync-indicator">
-                                    <Loader2 className="animate-spin" size={24} color="var(--neon-green)" />
-                                    <span>STREAMING ORBITAL DATA...</span>
-                                </div>
                             )}
 
-                            {/* NEURAL X-RAY LENS */}
-                            {lensState.active && (
-                                <div
-                                    className="neural-xray-lens"
-                                    style={{
-                                        left: lensState.x,
-                                        top: lensState.y,
-                                        backgroundImage: `url(${imgSpectral})`,
-                                        backgroundPosition: `-${lensState.x}px -${lensState.y}px`,
-                                        filter: getLensFilter()
-                                    }}
-                                >
-                                    <div className="lens-crosshair"></div>
-                                    <div className="lens-label">{activeBand === 'RGB' ? 'BIO-SCAN' : activeBand}</div>
-                                </div>
-                            )}
-
-                            {/* HOLOGRAPHIC CAUSAL PATHS */}
-                            {isSim && showHologram && (
-                                <svg className="holographic-overlay" viewBox="0 0 600 450">
-                                    <defs>
-                                        <filter id="glow">
-                                            <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
-                                            <feMerge>
-                                                <feMergeNode in="coloredBlur" /><feMergeNode in="SourceGraphic" />
-                                            </feMerge>
-                                        </filter>
-                                    </defs>
-                                    {/* Urban branching paths - more visible as Urban slider increases */}
-                                    <path
-                                        d="M100,100 L150,150 L200,140 L250,180 M300,50 L320,120 L400,110 M50,400 L120,380 L180,420"
-                                        className="hologram-path urban"
-                                        style={{ opacity: policySliders.urban / 100, strokeDashoffset: policySliders.urban }}
-                                    />
-                                    <path
-                                        d="M400,300 L450,350 L520,340 M550,50 L500,120 L580,180"
-                                        className="hologram-path urban"
-                                        style={{ opacity: policySliders.urban / 100, strokeDashoffset: policySliders.urban * 2 }}
-                                    />
-                                    {/* Conservation glow spots */}
-                                    <circle cx="200" cy="250" r="40" className="hologram-pulse conservation" style={{ opacity: policySliders.conservation / 100 }} />
-                                    <circle cx="450" cy="150" r="60" className="hologram-pulse conservation" style={{ opacity: policySliders.conservation / 100 }} />
+                            {/* HOLOGRAPHIC SVG OVERLAY */}
+                            {isSim && (
+                                <svg className="hologram-layer" viewBox="0 0 600 450">
+                                    <path d="M50,50 L100,100 L80,150 L120,200" className="neural-path" style={{ opacity: policySliders.urban / 100 }} />
+                                    <path d="M400,300 L450,350 L520,320" className="neural-path" style={{ opacity: policySliders.urban / 100, animationDelay: '1s' }} />
+                                    <circle cx="250" cy="200" r={policySliders.conservation * 0.8} className="biosphere-pulse" style={{ opacity: policySliders.conservation / 100 }} />
                                 </svg>
                             )}
 
-                            <img
-                                src={imgPresent}
-                                alt="Baseline"
-                                className="comparison-image"
-                                onLoad={() => setLoadStatus(p => ({ ...p, baseline: true }))}
-                                style={{ visibility: loadStatus.baseline ? 'visible' : 'hidden' }}
-                            />
+                            <img src={imgPresent} alt="Base" className="img-base" style={{ visibility: loadStatus.baseline ? 'visible' : 'hidden' }} />
 
                             {mode === 'evolution' ? (
-                                <img
-                                    src={imgHistorical}
-                                    alt="Historical"
-                                    className="comparison-image-overlay"
-                                    onLoad={() => setLoadStatus(p => ({ ...p, comparison: true }))}
-                                    style={{
-                                        visibility: loadStatus.comparison ? 'visible' : 'hidden',
-                                        clipPath: `inset(0 0 0 ${sliderValue}%)`,
-                                        filter: selectedYear < 2015 ? 'contrast(0.7) brightness(1.2) grayscale(0.2) sepia(0.2)' : 'none'
-                                    }}
-                                />
+                                <img src={imgHistorical} alt="History" className="img-overlay" style={{
+                                    visibility: loadStatus.comparison ? 'visible' : 'hidden',
+                                    clipPath: `inset(0 0 0 ${comparisonSlider}%)`,
+                                    filter: selectedYear < 2015 ? 'contrast(0.7) brightness(1.2) grayscale(0.2)' : 'none'
+                                }} />
                             ) : (
-                                <div
-                                    className="comparison-image-overlay simulation-layer"
-                                    style={{
-                                        clipPath: `inset(0 0 0 ${sliderValue}%)`,
-                                        backgroundImage: `url(${imgPresent})`,
-                                        backgroundSize: 'cover',
-                                        filter: `sepia(1) hue-rotate(${policySliders.urban > policySliders.conservation ? '-50deg' : '80deg'}) saturate(${1 + Math.max(policySliders.urban, policySliders.conservation) / 25}) contrast(1.1)`,
-                                        mixBlendingMode: policySliders.urban > policySliders.conservation ? 'multiply' : 'screen',
-                                        opacity: 0.7 + (Math.max(policySliders.urban, policySliders.conservation) / 300)
-                                    }}
-                                ></div>
+                                <div className="simulation-mask" style={{
+                                    clipPath: `inset(0 0 0 ${comparisonSlider}%)`,
+                                    backgroundImage: `url(${imgPresent})`,
+                                    filter: `sepia(1) hue-rotate(${policySliders.urban > policySliders.conservation ? '-50deg' : '80deg'}) saturate(${1 + Math.max(policySliders.urban, policySliders.conservation) / 30})`,
+                                    mixBlendingMode: policySliders.urban > policySliders.conservation ? 'multiply' : 'screen',
+                                    opacity: 0.8
+                                }}></div>
                             )}
 
-                            <input
-                                type="range" min="0" max="100" value={sliderValue}
-                                onChange={(e) => setSliderValue(e.target.value)}
-                                className="comparison-slider"
-                            />
+                            <input type="range" min="0" max="100" value={comparisonSlider} onChange={e => setComparisonSlider(e.target.value)} className="viewport-slider" />
 
-                            <div className="label-past">BASELINE.2024</div>
-                            <div className="label-present" style={{ color: isSim ? '#ff4d4d' : 'var(--neon-green)' }}>
-                                {isSim ? 'PROJECTION.2035' : `TEMPORAL.${selectedYear}`}
+                            <div className="viewport-labels">
+                                <span className="label-l">BASELINE 2024</span>
+                                <span className="label-r" style={{ color: isSim ? '#ff4d4d' : 'var(--neon-green)' }}>
+                                    {isSim ? 'PREDICTION 2035' : `TEMPORAL ${selectedYear}`}
+                                </span>
                             </div>
-                        </div>
-
-                        <div className="ai-narrative-terminal mt-4" ref={terminalRef}>
-                            {terminalLogs.map((log, i) => (
-                                <div key={i} className={`terminal-line ${log.isNarrative ? 'narrative' : ''}`}>
-                                    <span className="timestamp">[{log.timestamp}]</span>
-                                    <span className="source">{log.isNarrative ? 'INTEL_AGENT' : 'SYS_LINK'}:</span>
-                                    <span className="msg">{log.msg}</span>
-                                    {log.isNarrative && <div className="typing-cursor"></div>}
-                                </div>
-                            ))}
                         </div>
                     </div>
 
-                    <div className="analysis-section">
-                        {isSim && (
-                            <div className="analysis-card mb-4 sim-card">
-                                <h3 className="section-title"><Zap size={18} color="#ff4d4d" /> CAUSAL PARAMETERS</h3>
-                                <div className="simulation-controls">
-                                    <div className="control-item">
-                                        <label>Urban Expansion Delta <span>{policySliders.urban}%</span></label>
-                                        <input type="range" min="0" max="100" value={policySliders.urban} onChange={(e) => setPolicySliders(p => ({ ...p, urban: parseInt(e.target.value) }))} />
+                    {/* RIGHT PANEL: INTELLIGENCE SIDEBAR */}
+                    <div className="intelligence-sidebar">
+
+                        {/* MODE SELECTOR */}
+                        <div className="panel-group">
+                            <h3 className="panel-title">SYSTEM MODE</h3>
+                            <div className="mode-switcher">
+                                <button className={mode === 'evolution' ? 'active' : ''} onClick={() => setMode('evolution')}>EVOLUTION</button>
+                                <button className={mode === 'projection' ? 'active' : ''} onClick={() => setMode('projection')}>SIMULATION</button>
+                            </div>
+                        </div>
+
+                        {/* CONTROLS AREA */}
+                        <div className="panel-group">
+                            <h3 className="panel-title">{isSim ? 'POLICY DRIVERS' : 'TEMPORAL FOCUS'}</h3>
+                            {mode === 'evolution' ? (
+                                <div className="timeline-control">
+                                    <div className="timeline-header">
+                                        <span>Target Epoch:</span>
+                                        <span className="val">{selectedYear}</span>
                                     </div>
-                                    <div className="control-item">
-                                        <label>Conservation Offset <span>{policySliders.conservation}%</span></label>
-                                        <input type="range" min="0" max="100" value={policySliders.conservation} onChange={(e) => setPolicySliders(p => ({ ...p, conservation: parseInt(e.target.value) }))} />
+                                    <input type="range" min="2010" max="2024" step="1" value={selectedYear} onChange={e => setSelectedYear(parseInt(e.target.value))} className="pro-slider" />
+                                    <div className="timeline-ticks">
+                                        {['2010', '2014', '2018', '2024'].map(y => <span key={y}>{y}</span>)}
                                     </div>
                                 </div>
-                            </div>
-                        )}
+                            ) : (
+                                <div className="simulation-inputs">
+                                    <div className="input-row">
+                                        <div className="label-row"><span>Urban Sprawl</span><span>{policySliders.urban}%</span></div>
+                                        <input type="range" min="0" max="100" value={policySliders.urban} onChange={e => setPolicySliders(p => ({ ...p, urban: parseInt(e.target.value) }))} className="pro-slider urban" />
+                                    </div>
+                                    <div className="input-row">
+                                        <div className="label-row"><span>Conservation</span><span>{policySliders.conservation}%</span></div>
+                                        <input type="range" min="0" max="100" value={policySliders.conservation} onChange={e => setPolicySliders(p => ({ ...p, conservation: parseInt(e.target.value) }))} className="pro-slider conservation" />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
 
-                        <div className="analysis-card mb-4">
-                            <h3 className="section-title"><Activity size={18} /> BIO-METRIC AUDIT</h3>
-                            <div className="metrics-grid">
+                        {/* METRICS PANEL */}
+                        <div className="panel-group">
+                            <h3 className="panel-title">LIVE REASONING</h3>
+                            <div className="metrics-list">
                                 {metrics.map(m => (
-                                    <div key={m.label} className="metric-box">
-                                        <label>{m.label}</label>
-                                        <div className="metric-value-row">
-                                            <span>{m.value}</span>
-                                            <span className={`trend-${m.trend}`}><Eye size={10} style={{ marginRight: '4px' }} /> MONITORING</span>
+                                    <div key={m.label} className="metric-entry">
+                                        <div className="entry-icon">{m.icon}</div>
+                                        <div className="entry-data">
+                                            <span className="label">{m.label}</span>
+                                            <span className="value">{m.value}</span>
                                         </div>
+                                        <div className={`entry-trend ${m.trend}`}>{m.trend.toUpperCase()}</div>
                                     </div>
                                 ))}
                             </div>
                         </div>
 
-                        <div className="analysis-card">
-                            <h3 className="section-title"><Compass size={18} /> SPATIAL BREAKDOWN</h3>
-                            <div className="threat-chart">
-                                {[
-                                    { label: 'Canopy Density', val: isSim ? Math.max(5, 75 - (policySliders.urban * 0.4)) : Math.min(100, 75 + (2024 - selectedYear) * 1.5), color: '#39ff14' },
-                                    { label: 'Built Environment', val: isSim ? Math.min(100, 45 + (policySliders.urban * 0.5)) : Math.max(5, 45 - (2024 - selectedYear) * 2), color: '#ff4d4d' },
-                                    { label: 'Ecosystem Stress', val: isSim ? Math.min(100, 30 + (policySliders.urban * 0.3)) : 30, color: '#f1c40f' }
-                                ].map(t => (
-                                    <div key={t.label} className="chart-row">
-                                        <div className="row-info"><span>{t.label}</span><span>{Math.round(t.val)}%</span></div>
-                                        <div className="bar-bg"><div className="bar-fill" style={{ width: `${t.val}%`, backgroundColor: t.color }}></div></div>
+                        {/* AI NARRATIVE TERMINAL */}
+                        <div className="panel-group terminal-container">
+                            <div className="terminal-header">
+                                <Binary size={12} />
+                                <span>GAEA-ML_FEED</span>
+                            </div>
+                            <div className="intelligence-terminal" ref={terminalRef}>
+                                {terminalLogs.map((log, i) => (
+                                    <div key={i} className={`terminal-post ${log.isIntel ? 'intel' : ''}`}>
+                                        <span className="time">[{log.timestamp}]</span>
+                                        <span className="msg">{log.msg}</span>
                                     </div>
                                 ))}
                             </div>
@@ -361,120 +285,225 @@ const SatelliteAnalysis = ({ analysisData, onClose }) => {
                 </div>
             </div>
 
+            {/* INLINE COMPONENT SCOPED STYLES */}
             <style dangerouslySetInnerHTML={{
                 __html: `
-                .intelligence-view {
-                    cursor: crosshair;
+                .satellite-modal-overlay {
+                    position: fixed;
+                    inset: 0;
+                    background: rgba(0, 0, 0, 0.85);
+                    backdrop-filter: blur(10px);
+                    z-index: 1000;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 40px;
                 }
-                .neural-xray-lens {
-                    position: absolute;
-                    width: 160px;
-                    height: 160px;
-                    border-radius: 50%;
-                    border: 2px solid var(--neon-green);
-                    box-shadow: 0 0 20px rgba(57, 255, 20, 0.4), inset 0 0 20px rgba(57, 255, 20, 0.2);
-                    pointer-events: none;
-                    z-index: 30;
-                    transform: translate(-50%, -50%);
-                    background-repeat: no-repeat;
+                .dashboard-layout {
+                    width: 100%;
+                    max-width: 1200px;
+                    height: 85vh;
+                    background: #050805 !important;
+                    display: flex;
+                    flex-direction: column;
+                    border: 1px solid rgba(57, 255, 20, 0.2);
+                    box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
                     overflow: hidden;
+                    border-radius: 12px;
                 }
-                .lens-crosshair {
-                    position: absolute;
-                    inset: 0;
-                    background-image: 
-                        linear-gradient(to right, var(--neon-green) 1px, transparent 1px),
-                        linear-gradient(to bottom, var(--neon-green) 1px, transparent 1px);
-                    background-position: center;
-                    background-size: 20px 20px;
-                    background-repeat: no-repeat;
-                    opacity: 0.5;
-                }
-                .lens-label {
-                    position: absolute;
-                    bottom: 10px;
-                    left: 50%;
-                    transform: translateX(-50%);
-                    background: var(--neon-green);
-                    color: black;
-                    font-size: 0.6rem;
-                    font-weight: 900;
-                    padding: 2px 8px;
-                    border-radius: 10px;
-                    letter-spacing: 1px;
-                }
-                .holographic-overlay {
-                    position: absolute;
-                    inset: 0;
-                    z-index: 25;
-                    pointer-events: none;
-                }
-                .hologram-path {
-                    fill: none;
-                    stroke: #ff4d4d;
-                    stroke-width: 2;
-                    stroke-dasharray: 100;
-                    animation: dash 3s linear infinite;
-                    filter: url(#glow);
-                }
-                .hologram-pulse {
-                    fill: rgba(57, 255, 20, 0.1);
-                    stroke: var(--neon-green);
-                    stroke-width: 1;
-                    animation: pulse-glow 2s ease-in-out infinite;
-                }
-                @keyframes dash {
-                    to { stroke-dashoffset: 0; }
-                }
-                @keyframes pulse-glow {
-                    0% { transform: scale(0.9); opacity: 0.2; }
-                    50% { transform: scale(1.1); opacity: 0.5; }
-                    100% { transform: scale(0.9); opacity: 0.2; }
-                }
-                .ai-narrative-terminal {
-                    background: rgba(0, 0, 0, 0.6);
-                    border: 1px solid rgba(57, 255, 20, 0.1);
-                    border-radius: 8px;
-                    padding: 15px;
-                    max-height: 180px;
-                    overflow-y: auto;
-                    font-family: 'Courier New', monospace;
-                }
-                .terminal-line.narrative {
-                    color: var(--neon-green);
-                    border-left: 2px solid var(--neon-green);
-                    padding-left: 10px;
-                    margin: 10px 0;
-                    background: rgba(57, 255, 20, 0.05);
-                }
-                .intelligence-toolbar {
+                .dashboard-header {
+                    padding: 20px 30px;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
                 }
-                .visual-controls {
-                    display: flex;
-                    gap: 15px;
-                    align-items: center;
-                }
-                .control-toggle {
-                    background: rgba(0,0,0,0.4);
-                    border: 1px solid rgba(255,255,255,0.1);
-                    color: #888;
-                    padding: 6px 12px;
-                    border-radius: 4px;
-                    font-size: 0.7rem;
+                .intel-badge {
                     display: flex;
                     align-items: center;
                     gap: 8px;
-                    transition: all 0.3s;
+                    background: rgba(57, 255, 20, 0.1);
+                    color: var(--neon-green);
+                    padding: 4px 12px;
+                    border-radius: 4px;
+                    font-size: 0.65rem;
+                    font-weight: 900;
+                    letter-spacing: 2px;
+                    margin-bottom: 8px;
                 }
-                .control-toggle.active {
-                    color: #00f0ff;
-                    border-color: #00f0ff;
-                    box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+                .dashboard-header h2 { font-size: 1.2rem; letter-spacing: 1px; }
+                .dashboard-header .version { opacity: 0.3; font-size: 0.7rem; margin-left: 10px; }
+                .coord-display { display: flex; align-items: center; gap: 8px; color: #555; font-size: 0.75rem; font-family: monospace; }
+                .close-dashboard { background: none; border: none; color: #555; cursor: pointer; transition: color 0.3s; }
+                .close-dashboard:hover { color: #ff4d4d; }
+
+                .dashboard-body {
+                    flex: 1;
+                    display: flex;
+                    overflow: hidden;
                 }
-                .sim-card .section-title { color: #ff4d4d; }
+
+                /* VISUAL VIEWPORT Styles */
+                .visual-viewport {
+                    flex: 7;
+                    background: #000;
+                    position: relative;
+                    display: flex;
+                    flex-direction: column;
+                    border-right: 1px solid rgba(255, 255, 255, 0.05);
+                }
+                .viewport-tools {
+                    padding: 15px 25px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    background: rgba(0, 0, 0, 0.4);
+                    z-index: 10;
+                }
+                .tool-pill { display: flex; align-items: center; gap: 10px; font-size: 0.7rem; color: #888; font-weight: 800; }
+                .band-tabs { display: flex; gap: 4px; background: #111; padding: 3px; border-radius: 6px; }
+                .band-tabs button { background: none; border: none; padding: 4px 12px; border-radius: 4px; color: #555; font-size: 0.65rem; font-weight: 900; cursor: pointer; }
+                .band-tabs button.active { background: #222; color: #fff; }
+
+                .viewport-imagery {
+                    flex: 1;
+                    position: relative;
+                    overflow: hidden;
+                    cursor: crosshair;
+                }
+                .img-base, .img-overlay, .simulation-mask {
+                    position: absolute;
+                    inset: 0;
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                }
+                .orbital-sync-overlay {
+                    position: absolute;
+                    inset: 0;
+                    background: #000;
+                    z-index: 50;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 15px;
+                    color: var(--neon-green);
+                    font-size: 0.7rem;
+                    font-weight: 900;
+                    letter-spacing: 2px;
+                }
+                .neural-lens {
+                    position: absolute;
+                    width: 180px;
+                    height: 180px;
+                    border-radius: 50%;
+                    border: 2px solid var(--neon-green);
+                    box-shadow: 0 0 30px rgba(57, 255, 20, 0.3);
+                    z-index: 60;
+                    transform: translate(-50%, -50%);
+                    pointer-events: none;
+                    background-repeat: no-repeat;
+                }
+                .lens-overlay {
+                    position: absolute;
+                    inset: 0;
+                    background: radial-gradient(circle, transparent 40%, rgba(57, 255, 20, 0.1) 100%);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                .lens-label { background: var(--neon-green); color: #000; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 900; margin-top: 100px; }
+
+                .viewport-slider {
+                    position: absolute;
+                    top: 50%;
+                    left: 0;
+                    width: 100%;
+                    transform: translateY(-50%);
+                    z-index: 100;
+                    appearance: none;
+                    background: transparent;
+                    pointer-events: none;
+                }
+                .viewport-slider::-webkit-slider-thumb {
+                    appearance: none;
+                    width: 2px;
+                    height: 90vh;
+                    background: var(--neon-green);
+                    cursor: ew-resize;
+                    pointer-events: auto;
+                    box-shadow: 0 0 10px var(--neon-green);
+                }
+                .viewport-labels {
+                    position: absolute;
+                    bottom: 25px;
+                    left: 25px;
+                    right: 25px;
+                    display: flex;
+                    justify-content: space-between;
+                    z-index: 70;
+                    pointer-events: none;
+                }
+                .viewport-labels span { background: rgba(0,0,0,0.8); padding: 4px 12px; border-radius: 4px; font-size: 0.6rem; font-weight: 900; letter-spacing: 1px; border: 1px solid rgba(255,255,255,0.1); }
+
+                /* INTELLIGENCE SIDEBAR Styles */
+                .intelligence-sidebar {
+                    flex: 3;
+                    background: rgba(5, 8, 5, 0.5);
+                    display: flex;
+                    flex-direction: column;
+                    padding: 25px;
+                    gap: 30px;
+                    overflow-y: auto;
+                }
+                .panel-group { display: flex; flex-direction: column; gap: 15px; }
+                .panel-title { font-size: 0.65rem; color: #555; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; }
+
+                .mode-switcher { display: flex; background: #111; padding: 4px; border-radius: 8px; }
+                .mode-switcher button { flex: 1; border: none; background: none; color: #555; padding: 8px; font-size: 0.7rem; font-weight: 800; cursor: pointer; transition: all 0.3s; border-radius: 6px; }
+                .mode-switcher button.active { background: var(--neon-green); color: #000; box-shadow: 0 0 10px rgba(57, 255, 20, 0.3); }
+
+                .pro-slider { appearance: none; width: 100%; height: 4px; background: #222; border-radius: 2px; }
+                .pro-slider::-webkit-slider-thumb { appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #fff; cursor: pointer; box-shadow: 0 0 5px rgba(255,255,255,0.5); }
+                .pro-slider.urban::-webkit-slider-thumb { background: #ff4d4d; box-shadow: 0 0 10px rgba(255, 77, 77, 0.5); }
+                .pro-slider.conservation::-webkit-slider-thumb { background: var(--neon-green); box-shadow: 0 0 10px rgba(57, 255, 20, 0.5); }
+
+                .label-row { display: flex; justify-content: space-between; color: #888; font-size: 0.7rem; font-weight: 700; margin-bottom: 5px; }
+                .timeline-header { display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 900; margin-bottom: 10px; }
+                .timeline-header .val { color: var(--neon-green); }
+                .timeline-ticks { display: flex; justify-content: space-between; font-size: 0.55rem; color: #444; margin-top: 8px; font-weight: 900; }
+
+                .metrics-list { display: flex; flex-direction: column; gap: 12px; }
+                .metric-entry { display: flex; align-items: center; gap: 12px; background: rgba(255, 255, 255, 0.02); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); }
+                .entry-icon { width: 32px; height: 32px; background: #111; display: flex; align-items: center; justify-content: center; border-radius: 6px; color: var(--neon-green); border: 1px solid rgba(57, 255, 20, 0.1); }
+                .entry-data { flex: 1; display: flex; flex-direction: column; }
+                .entry-data .label { font-size: 0.6rem; color: #666; font-weight: 800; }
+                .entry-data .value { font-size: 0.9rem; font-weight: 900; color: #fff; }
+                .entry-trend { font-size: 0.55rem; font-weight: 900; padding: 2px 6px; border-radius: 3px; }
+                .entry-trend.up { background: rgba(57, 255, 20, 0.1); color: var(--neon-green); }
+                .entry-trend.down { background: rgba(255, 77, 77, 0.1); color: #ff4d4d; }
+
+                .terminal-container { background: #020402; border: 1px solid rgba(57, 255, 20, 0.1); border-radius: 8px; overflow: hidden; height: 200px; }
+                .terminal-header { background: rgba(57, 255, 20, 0.1); padding: 5px 12px; display: flex; align-items: center; gap: 8px; color: var(--neon-green); font-size: 0.6rem; font-weight: 900; letter-spacing: 1px; }
+                .intelligence-terminal { padding: 12px; height: 160px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 0.65rem; }
+                .terminal-post { margin-bottom: 10px; display: flex; flex-direction: column; border-left: 1px solid #222; padding-left: 10px; }
+                .terminal-post.intel { border-left-color: var(--neon-green); background: rgba(57, 255, 20, 0.03); padding: 6px 10px; }
+                .terminal-post .time { color: #444; font-size: 0.55rem; }
+                .terminal-post .msg { color: #888; line-height: 1.4; }
+                .terminal-post.intel .msg { color: var(--neon-green); }
+
+                /* HOLOGRAM ANIMATIONS */
+                .hologram-layer { position: absolute; inset: 0; z-index: 40; pointer-events: none; }
+                .neural-path { fill: none; stroke: #ff4d4d; stroke-width: 2; stroke-dasharray: 100; animation: dash 5s linear infinite; filter: drop-shadow(0 0 5px #ff4d4d); }
+                .biosphere-pulse { fill: none; stroke: var(--neon-green); stroke-width: 1; animation: pulse 3s infinite; filter: drop-shadow(0 0 8px var(--neon-green)); }
+                @keyframes dash { to { stroke-dashoffset: -200; } }
+                @keyframes pulse { 0% { r: 10; opacity: 1; stroke-width: 3; } 100% { r: 80; opacity: 0; stroke-width: 1; } }
+
+                /* SCROLLBARS */
+                .intelligence-sidebar::-webkit-scrollbar, .intelligence-terminal::-webkit-scrollbar { width: 4px; }
+                .intelligence-sidebar::-webkit-scrollbar-track, .intelligence-terminal::-webkit-scrollbar-track { background: transparent; }
+                .intelligence-sidebar::-webkit-scrollbar-thumb, .intelligence-terminal::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); border-radius: 2px; }
             `}} />
         </div>
     );
