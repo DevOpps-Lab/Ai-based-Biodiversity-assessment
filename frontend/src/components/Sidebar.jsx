@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { Leaf, AlertTriangle, Thermometer, Droplets, Info, RefreshCw, Zap, FileText, ShieldAlert, Activity, BarChart3, Search } from 'lucide-react';
 
-const Sidebar = ({ analysisData, trendData, forecastData, alerts, onSimulate, onDownloadReport, loading }) => {
+const Sidebar = ({ analysisData, trendData, forecastData, alerts, onSimulate, onDownloadReport, loading, isExporting }) => {
     const [simParams, setSimParams] = useState({
         urban_growth_pct: 0,
         temp_increase: 0
@@ -166,18 +166,34 @@ const Sidebar = ({ analysisData, trendData, forecastData, alerts, onSimulate, on
             <div className="card glass-panel">
                 <h3 className="section-title"><Info size={16} color="var(--neon-green)" /> Neural Logic Insights</h3>
                 <div className="logic-list">
-                    {(rules.reasons || []).slice(0, 2).map((reason, idx) => (
-                        <div key={idx} className="logic-item">
-                            <div className="logic-bullet"></div>
-                            <span>{reason}</span>
+                    {(rules.reasons || []).length > 0 ? (
+                        (rules.reasons || []).slice(0, 2).map((reason, idx) => (
+                            <div key={idx} className="logic-item">
+                                <div className="logic-bullet"></div>
+                                <span>{reason}</span>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="logic-item">
+                            <div className="logic-bullet" style={{ background: 'var(--risk-low)' }}></div>
+                            <span>Stable ecosystem indicators detected in this sector.</span>
                         </div>
-                    ))}
+                    )}
                 </div>
                 <button
                     onClick={onDownloadReport}
                     className="btn-report"
+                    disabled={isExporting}
                 >
-                    <FileText size={14} /> EXPORT ECO-INTELLIGENCE REPORT
+                    {isExporting ? (
+                        <>
+                            <RefreshCw className="animate-spin" size={14} /> GENERATING REPORT...
+                        </>
+                    ) : (
+                        <>
+                            <FileText size={14} /> EXPORT ECO-INTELLIGENCE REPORT
+                        </>
+                    )}
                 </button>
             </div>
 

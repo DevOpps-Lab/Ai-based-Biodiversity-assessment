@@ -101,65 +101,150 @@ async def analyze_region(req: RegionRequest):
 
 @app.post("/generate-report")
 async def generate_report(data: dict):
-    pdf = FPDF()
-    pdf.add_page()
-    
-    # Header
-    pdf.set_font("Arial", 'B', 20)
-    pdf.set_text_color(46, 204, 113) 
-    pdf.cell(190, 15, "Biodiversity Risk Intelligence Report", ln=True, align='C')
-    pdf.ln(5)
-    
-    # Summary Section
-    pdf.set_font("Arial", 'B', 14)
-    pdf.set_text_color(0, 0, 0)
-    pdf.cell(100, 10, "1. Risk Summary", ln=True)
-    pdf.set_font("Arial", size=11)
-    pdf.cell(100, 7, f"Region Center: {data['location']['lat']:.4f}, {data['location']['lng']:.4f}", ln=True)
-    pdf.cell(100, 7, f"Risk Level: {data['rules']['risk_level']}", ln=True)
-    pdf.cell(100, 7, f"Risk Score: {data['rules']['risk_score']}/10", ln=True)
-    pdf.cell(100, 7, f"AI Classifier Confidence: {data['ml']['confidence']*100:.1f}%", ln=True)
-    pdf.ln(5)
-    
-    # Reasoning Section
-    pdf.set_font("Arial", 'B', 14)
-    pdf.cell(100, 10, "2. Ecological Reasoning", ln=True)
-    pdf.set_font("Arial", size=11)
-    for reason in data['rules']['reasons']:
-        pdf.multi_cell(0, 7, f"- {reason}")
-    if not data['rules']['reasons']:
-        pdf.cell(100, 7, "No critical stressors detected.")
-    pdf.ln(5)
-    
-    # Species Impacts
-    pdf.set_font("Arial", 'B', 14)
-    pdf.cell(100, 10, "3. Biodiversity Impact Projection", ln=True)
-    pdf.set_font("Arial", size=11)
-    for imp in data['impacts']:
-        pdf.set_font("Arial", 'B', 11)
-        pdf.cell(100, 7, f"Group: {imp['group']}", ln=True)
-        pdf.set_font("Arial", size=11)
-        pdf.multi_cell(0, 7, f"Impact: {imp['impact']}")
-        pdf.ln(2)
-    pdf.ln(5)
-    
-    # Interventions
-    pdf.set_font("Arial", 'B', 14)
-    pdf.set_text_color(46, 204, 113)
-    pdf.cell(100, 10, "4. Suggested Interventions", ln=True)
-    pdf.set_text_color(0, 0, 0)
-    pdf.set_font("Arial", size=11)
-    for action in data.get('interventions', []):
-        pdf.multi_cell(0, 8, f"[ACTION] {action}", border=0)
-    pdf.ln(10)
-    
-    # Footer
-    pdf.set_font("Arial", 'I', 8)
-    pdf.cell(0, 10, f"Generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | Bio-Risk AI Platform", align='C')
-    
-    pdf_output = pdf.output(dest='S')
-    return Response(content=pdf_output, media_type="application/pdf", 
-                    headers={"Content-Disposition": "attachment; filename=biodiversity_report.pdf"})
+    print(f"Generating detailed report for: {data.get('location')}")
+    try:
+        pdf = FPDF()
+        pdf.add_page()
+        
+        # --- Page Header ---
+        pdf.set_fill_color(27, 67, 50) # Dark forest green
+        pdf.rect(0, 0, 210, 40, 'F')
+        pdf.set_text_color(255, 255, 255)
+        pdf.set_font("Helvetica", 'B', 24)
+        pdf.cell(190, 20, "BIO-RISK INTELLIGENCE", ln=True, align='L')
+        pdf.set_font("Helvetica", size=10)
+        pdf.cell(190, 5, "Advanced Geospatial Biodiversity Risk Assessment Report", ln=True, align='L')
+        pdf.ln(15)
+        
+        # --- Section 1: Geospatial Metadata ---
+        pdf.set_text_color(0, 0, 0)
+        pdf.set_font("Helvetica", 'B', 14)
+        pdf.cell(0, 10, "1. PROJECT METADATA", ln=True)
+        pdf.set_font("Helvetica", size=10)
+        
+        lat = data.get('location', {}).get('lat', 0)
+        lng = data.get('location', {}).get('lng', 0)
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        pdf.cell(95, 8, f"Analysis ID: BR-AI-{random.randint(1000, 9999)}", border=1)
+        pdf.cell(95, 8, f"Timestamp: {timestamp}", border=1, ln=True)
+        pdf.cell(95, 8, f"Latitude: {lat:.6f}", border=1)
+        pdf.cell(95, 8, f"Longitude: {lng:.6f}", border=1, ln=True)
+        pdf.cell(190, 8, "Monitoring Resolution: 30m Multispectral Baseline", border=1, ln=True)
+        pdf.ln(10)
+        
+        # --- Section 2: Ecosystem Vitals ---
+        pdf.set_font("Helvetica", 'B', 14)
+        pdf.cell(0, 10, "2. ECOSYSTEM VITALS (TELEMETRY)", ln=True)
+        pdf.set_font("Helvetica", size=10)
+        
+        indicators = data.get('indicators', {})
+        ndvi = indicators.get('ndvi', 0.0)
+        coverage = indicators.get('forest_coverage', 0.0)
+        biomass = indicators.get('biomass', 0.0)
+        temp = indicators.get('temperature', 0.0)
+        
+        # Vitals Table
+        pdf.set_fill_color(240, 240, 240)
+        pdf.cell(63, 10, "Indicator", border=1, fill=True, align='C')
+        pdf.cell(63, 10, "Value", border=1, fill=True, align='C')
+        pdf.cell(64, 10, "Status", border=1, fill=True, align='C', ln=True)
+        
+        def get_status(val, low, high):
+            if val < low: return "Critical"
+            if val < high: return "Warning"
+            return "Optimal"
+
+        pdf.cell(63, 8, "NDVI (Veg. Health)", border=1)
+        pdf.cell(63, 8, f"{ndvi:.3f}", border=1, align='C')
+        pdf.cell(64, 8, get_status(ndvi, 0.4, 0.6), border=1, align='C', ln=True)
+        
+        pdf.cell(63, 8, "Canopy Coverage", border=1)
+        pdf.cell(63, 8, f"{coverage:.1f}%", border=1, align='C')
+        pdf.cell(64, 8, get_status(coverage, 30, 60), border=1, align='C', ln=True)
+        
+        pdf.cell(63, 8, "Biomass Density", border=1)
+        pdf.cell(63, 8, f"{biomass:.1f} t/ha", border=1, align='C')
+        pdf.cell(64, 8, "Active Carbon Sink", border=1, align='C', ln=True)
+        
+        pdf.cell(63, 8, "Avg. Temperature", border=1)
+        pdf.cell(63, 8, f"{temp:.1f} C", border=1, align='C')
+        pdf.cell(64, 8, "Thermal Baseline", border=1, align='C', ln=True)
+        pdf.ln(10)
+        
+        # --- Section 3: AI Risk Intelligence ---
+        pdf.set_font("Helvetica", 'B', 14)
+        pdf.cell(0, 10, "3. AI RISK INTELLIGENCE & REASONING", ln=True)
+        
+        rules = data.get('rules', {})
+        risk_level = rules.get('risk_level', 'Unknown')
+        risk_score = rules.get('risk_score', 0)
+        
+        # Risk Box
+        if risk_level == "High": pdf.set_fill_color(255, 230, 230); pdf.set_text_color(200, 0, 0)
+        elif risk_level == "Medium": pdf.set_fill_color(255, 245, 220); pdf.set_text_color(200, 100, 0)
+        else: pdf.set_fill_color(230, 255, 230); pdf.set_text_color(0, 150, 0)
+        
+        pdf.set_font("Helvetica", 'B', 12)
+        pdf.cell(190, 12, f"CALCULATED RISK LEVEL: {risk_level.upper()} ({risk_score}/10)", border=1, fill=True, ln=True, align='C')
+        pdf.set_text_color(0, 0, 0)
+        pdf.set_font("Helvetica", size=10)
+        
+        pdf.ln(3)
+        pdf.set_font("Helvetica", 'B', 11)
+        pdf.cell(0, 8, "Ecological Reasoning (Neural Chain):", ln=True)
+        pdf.set_font("Helvetica", size=10)
+        reasons = rules.get('reasons', [])
+        for reason in reasons:
+            pdf.multi_cell(0, 6, f"> {reason}")
+        if not reasons:
+            pdf.cell(0, 6, "> Current satellite snapshots show no immediate anthropogenic or thermal threats.", ln=True)
+        pdf.ln(10)
+        
+        # --- Section 4: Biodiversity Impact Projection ---
+        pdf.set_font("Helvetica", 'B', 14)
+        pdf.cell(0, 10, "4. BIODIVERSITY IMPACT PROJECTION", ln=True)
+        pdf.set_font("Helvetica", size=10)
+        
+        impacts = data.get('impacts', [])
+        for imp in impacts:
+            pdf.set_font("Helvetica", 'B', 10)
+            pdf.cell(0, 6, f"Target Indicator: {imp['group']}", ln=True)
+            pdf.set_font("Helvetica", size=9)
+            pdf.multi_cell(0, 5, f"Risk Context: {imp['impact']}")
+            pdf.ln(2)
+        if not impacts:
+            pdf.cell(0, 6, "Impact on indicator species is currently projected to be within baseline seasonal variance.", ln=True)
+        pdf.ln(10)
+        
+        # --- Section 5: Strategic Interventions ---
+        pdf.set_font("Helvetica", 'B', 14)
+        pdf.cell(0, 10, "5. RECOMMENDED CONSERVATION STRATEGY", ln=True)
+        pdf.set_font("Helvetica", size=10)
+        
+        actions = data.get('interventions', [])
+        for action in actions:
+            pdf.set_font("Helvetica", 'B', 10)
+            pdf.cell(0, 7, f"[PRIORITY ACTION] {action}", ln=True)
+        if not actions:
+            pdf.cell(0, 7, "Standard surveillance protocols and boundary enforcement recommended.", ln=True)
+        
+        pdf.ln(20)
+        # --- Footer ---
+        pdf.set_font("Helvetica", 'I', 8)
+        pdf.set_text_color(120, 120, 120)
+        pdf.cell(0, 10, "This report is generated using AI-driven geospatial analysis of multispectral satellite data.", align='C', ln=True)
+        pdf.cell(0, 5, "Bio-Risk AI Platform © 2026 | Conservation Intelligence Division", align='C')
+        
+        pdf_bytes = pdf.output()
+        # Convert bytearray to bytes for FastAPI Response compatibility
+        return Response(content=bytes(pdf_bytes), media_type="application/pdf", 
+                        headers={"Content-Disposition": "attachment; filename=biodiversity_report.pdf"})
+    except Exception as e:
+        import traceback
+        print(f"Error generating report: {str(e)}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail="Failed to generate PDF report")
 
 def process_single_point(lat, lng, ndvi, urban, temp, water):
     land_use = "urban" if urban else "forest"

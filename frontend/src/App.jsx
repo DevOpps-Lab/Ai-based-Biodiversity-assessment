@@ -14,6 +14,7 @@ function App() {
   const [forecastData, setForecastData] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [currentCoords, setCurrentCoords] = useState(null);
 
   const fetchAnalysis = async (coords, params = null) => {
@@ -89,20 +90,34 @@ function App() {
 
   const handleDownloadReport = async () => {
     if (!selectedCell) return;
+    setIsGeneratingReport(true);
     try {
+      console.log("Requesting report for:", selectedCell.location);
       const res = await axios.post(`${API_BASE}/generate-report`, selectedCell, {
-        responseType: 'blob'
+        responseType: 'blob',
+        timeout: 30000 // 30s timeout
       });
-      const url = window.URL.createObjectURL(new Blob([res.data]));
+
+      const file = new Blob([res.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(file);
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute('download', `Biodiversity_Report_${selectedCell.grid_id || 'regional'}.pdf`);
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+
+      // Cleanup
+      setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }, 100);
+
+      console.log("Report downloaded successfully");
     } catch (err) {
       console.error("Report generation failed:", err);
+      alert("Failed to generate report. Please ensure the backend is running and try again.");
+    } finally {
+      setIsGeneratingReport(false);
     }
   };
 
@@ -120,6 +135,7 @@ function App() {
         onSimulate={handleSimulate}
         onDownloadReport={handleDownloadReport}
         loading={loading}
+        isExporting={isGeneratingReport}
       />
       <MapView
         onSelectRegion={handleMapClick}
