@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { Leaf, AlertTriangle, Thermometer, Droplets, Info, RefreshCw, Zap, FileText, ShieldAlert, Activity, BarChart3, Search } from 'lucide-react';
 
-const Sidebar = ({ analysisData, trendData, forecastData, alerts, onSimulate, onDownloadReport, loading, isExporting }) => {
+const Sidebar = ({ analysisData, trendData, forecastData, alerts, onSimulate, onDownloadReport, onOpenSatellite, loading, isExporting }) => {
     const [simParams, setSimParams] = useState({
         urban_growth_pct: 0,
         temp_increase: 0
@@ -74,6 +74,12 @@ const Sidebar = ({ analysisData, trendData, forecastData, alerts, onSimulate, on
                 <div className="logo"><Leaf size={28} /> BIO-RISK AI</div>
                 <div className="tagline">Ecological Intelligence Dashboard</div>
             </div>
+
+            {/* NEW: DEEP SATELLITE INSIGHT TRIGGER */}
+            <button className="deep-insight-btn" onClick={onOpenSatellite}>
+                <Zap size={18} fill="white" />
+                EXPLORE DEEP SATELLITE INSIGHTS
+            </button>
 
             {/* LIVE MONITORING PANEL */}
             <div className="card glass-panel section-highlight">

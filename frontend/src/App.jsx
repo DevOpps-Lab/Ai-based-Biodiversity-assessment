@@ -3,6 +3,7 @@ import axios from 'axios';
 import LandingPage from './components/LandingPage';
 import Sidebar from './components/Sidebar';
 import MapView from './components/MapView';
+import SatelliteAnalysis from './components/SatelliteAnalysis';
 
 const API_BASE = 'http://localhost:8000';
 
@@ -16,6 +17,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [currentCoords, setCurrentCoords] = useState(null);
+  const [showSatelliteDeepDive, setShowSatelliteDeepDive] = useState(false);
 
   const fetchAnalysis = async (coords, params = null) => {
     if (!coords || typeof coords.lat !== 'number') return;
@@ -134,6 +136,7 @@ function App() {
         alerts={alerts}
         onSimulate={handleSimulate}
         onDownloadReport={handleDownloadReport}
+        onOpenSatellite={() => setShowSatelliteDeepDive(true)}
         loading={loading}
         isExporting={isGeneratingReport}
       />
@@ -144,6 +147,13 @@ function App() {
         activeCell={selectedCell}
         targetCoords={currentCoords}
       />
+
+      {showSatelliteDeepDive && (
+        <SatelliteAnalysis
+          analysisData={selectedCell}
+          onClose={() => setShowSatelliteDeepDive(false)}
+        />
+      )}
     </div>
   );
 }
