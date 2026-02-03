@@ -155,15 +155,32 @@ h3 {
 
 .floating-overlay {
   position: absolute;
-  top: 20px;
+  bottom: 40px;
   right: 20px;
   z-index: 1000;
 }
 
 .control-panel {
   padding: 16px;
-  min-width: 200px;
-  background: rgba(10, 17, 10, 0.82);
+  min-width: 240px;
+  background: rgba(10, 17, 10, 0.9);
+  border: 1px solid var(--neon-green);
+}
+
+.legend-desc {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin-top: 4px;
+}
+
+.legend-scale-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.6rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  font-weight: 600;
 }
 
 /* Animations */

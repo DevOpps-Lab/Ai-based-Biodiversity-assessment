@@ -251,32 +251,72 @@ const MapView = ({ onSelectRegion, onCellSelect, currentAnalysis, activeCell, ta
                 })}
             </MapContainer>
 
-            {/* Legend Panel */}
+            {/* Enhanced Legend Panel */}
             <div className="floating-overlay glass-panel control-panel">
-                <div style={{ marginBottom: '12px' }}>
-                    <h4 style={{ fontSize: '0.8rem', color: COLORS.NEON_GREEN, letterSpacing: '1px' }}>ECOLOGICAL OVERLAY</h4>
-                    <p style={{ fontSize: '0.6rem', color: '#555' }}>ACTIVE: {layer.toUpperCase()} MODEL</p>
+                <div style={{ marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>
+                    <h4 style={{ fontSize: '0.85rem', color: COLORS.NEON_GREEN, letterSpacing: '1px', marginBottom: '2px' }}>
+                        {layer === 'risk' ? 'BIODIVERSITY CLASSIFICATION' : layer === 'ndvi' ? 'VEGETATION INDEX (NDVI)' : 'FIRE RISK ANALYSIS'}
+                    </h4>
+                    <p className="legend-desc">
+                        {layer === 'risk' && "AI-predicted ecosystem stability based on multi-spectral satellite data and local biodiversity metrics."}
+                        {layer === 'ndvi' && "Measures 'greenness' - helping identify dense forests vs. urban or barren land from space."}
+                        {layer === 'fire' && "Thermal anomalies and moisture levels indicating susceptibility to landscape-scale fires."}
+                    </p>
                 </div>
-                {layer === 'risk' ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+
+                {layer === 'risk' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         {[
-                            { label: 'Critical Threat', color: COLORS.RISK_HIGH },
-                            { label: 'Moderate Risk', color: COLORS.RISK_MED },
-                            { label: 'Stable Habitat', color: COLORS.RISK_LOW }
+                            { label: 'Critical Threat', desc: 'Immediate intervention needed', color: COLORS.RISK_HIGH },
+                            { label: 'Moderate Risk', desc: 'Vulnerability detected', color: COLORS.RISK_MED },
+                            { label: 'Stable Habitat', desc: 'Healthy ecosystem', color: COLORS.RISK_LOW }
                         ].map(item => (
-                            <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.7rem' }}>
-                                <div style={{ width: 14, height: 14, borderRadius: '3px', background: item.color, border: '1px solid rgba(255,255,255,0.2)' }}></div>
-                                <span>{item.label}</span>
+                            <div key={item.label} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                                <div style={{ width: 14, height: 14, borderRadius: '3px', background: item.color, border: '1px solid rgba(255,255,255,0.2)', marginTop: '2px' }}></div>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <span style={{ fontSize: '0.75rem', fontWeight: '700' }}>{item.label}</span>
+                                    <span style={{ fontSize: '0.6rem', color: '#888' }}>{item.desc}</span>
+                                </div>
                             </div>
                         ))}
                     </div>
-                ) : (
-                    <div>
-                        <div style={{ height: '10px', width: '100%', background: `linear-gradient(to right, #081c15, ${COLORS.NEON_GREEN})`, borderRadius: '5px', marginBottom: '6px', border: '1px solid rgba(255,255,255,0.1)' }}></div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.6rem', color: '#888' }}>
-                            <span>SPARSE VEGETATION</span>
-                            <span>DENSE CANOPY</span>
+                )}
+
+                {layer === 'ndvi' && (
+                    <div style={{ padding: '4px 0' }}>
+                        <div style={{
+                            height: '14px',
+                            width: '100%',
+                            background: `linear-gradient(to right, hsl(120, 80%, 20%), hsl(120, 80%, 55%))`,
+                            borderRadius: '4px',
+                            marginBottom: '4px',
+                            border: '1px solid rgba(255,255,255,0.2)'
+                        }}></div>
+                        <div className="legend-scale-labels">
+                            <span>BARE / URBAN</span>
+                            <span>LUSH CANOPY</span>
                         </div>
+                        <div style={{ marginTop: '10px', fontSize: '0.65rem', color: '#888', fontStyle: 'italic' }}>
+                            Scale: 0.0 (No growth) to 1.0 (Dense jungle)
+                        </div>
+                    </div>
+                )}
+
+                {layer === 'fire' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {[
+                            { label: 'Extreme Hazard', range: '> 35°C Surface', color: '#ff4500' },
+                            { label: 'High Susceptibility', range: '30°C - 35°C', color: '#ff8c00' },
+                            { label: 'Low Frequency', range: '< 30°C Temp', color: 'rgba(255, 165, 0, 0.3)' }
+                        ].map(item => (
+                            <div key={item.label} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                                <div style={{ width: 14, height: 14, borderRadius: '3px', background: item.color, border: '1px solid rgba(255,255,255,0.2)', marginTop: '2px' }}></div>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <span style={{ fontSize: '0.75rem', fontWeight: '700' }}>{item.label}</span>
+                                    <span style={{ fontSize: '0.6rem', color: '#888' }}>{item.range}</span>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 )}
             </div>
