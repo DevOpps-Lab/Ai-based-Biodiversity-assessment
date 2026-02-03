@@ -146,11 +146,14 @@ const MapView = ({ onSelectRegion, onCellSelect, currentAnalysis, activeCell, ta
 
                 <div className="ribbon-stat">
                     <label>Region Monitoring</label>
-                    <span style={{ color: COLORS.NEON_GREEN }}>{currentAnalysis ? 'ACTIVE FEED' : 'IDLE'}</span>
+                    <div className="live-indicator">
+                        <div className="live-dot"></div>
+                        <span>{currentAnalysis ? 'SYNCED' : 'IDLE'}</span>
+                    </div>
                 </div>
                 <div className="ribbon-stat" style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '20px' }}>
                     <label>AI Confidence</label>
-                    <span style={{ color: COLORS.NEON_GREEN }}>{(avgConfidence * 100).toFixed(1)}%</span>
+                    <span style={{ color: COLORS.NEON_GREEN }}>{currentAnalysis ? `${(avgConfidence * 100).toFixed(1)}%` : '--'}</span>
                 </div>
 
                 <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '15px' }}>

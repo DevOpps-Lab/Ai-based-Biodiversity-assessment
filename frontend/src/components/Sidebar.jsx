@@ -8,7 +8,23 @@ const Sidebar = ({ analysisData, trendData, forecastData, alerts, onSimulate, on
         temp_increase: 0
     });
 
+    // "Live Jitter" state to simulate real-time sensor fluctuations
+    const [jitter, setJitter] = useState({ ndvi: 0, biomass: 0, coverage: 0 });
+
+    React.useEffect(() => {
+        if (!analysisData) return;
+        const interval = setInterval(() => {
+            setJitter({
+                ndvi: (Math.random() - 0.5) * 0.01,
+                biomass: (Math.random() - 0.5) * 2,
+                coverage: (Math.random() - 0.5) * 0.5
+            });
+        }, 3000);
+        return () => clearInterval(interval);
+    }, [analysisData]);
+
     if (!analysisData) {
+        // ... (rest of the empty state remains same)
         return (
             <div className="sidebar">
                 {loading && (
@@ -37,8 +53,11 @@ const Sidebar = ({ analysisData, trendData, forecastData, alerts, onSimulate, on
 
     const indicators = analysisData?.indicators || {};
     const rules = analysisData?.rules || { risk_level: 'Low', risk_score: 0, reasons: [] };
-    const impacts = analysisData?.impacts || [];
-    const interventions = analysisData?.interventions || [];
+
+    // Calculated live values
+    const liveForestCoverage = Math.max(0, Math.min(100, (indicators.forest_coverage || 0) + jitter.coverage)).toFixed(1);
+    const liveNDVI = Math.max(0, Math.min(1, (indicators.ndvi || 0) + jitter.ndvi)).toFixed(3);
+    const liveBiomass = Math.max(0, (indicators.biomass || 0) + jitter.biomass).toFixed(1);
 
     return (
         <div className="sidebar" style={{ position: 'relative' }}>
@@ -63,17 +82,17 @@ const Sidebar = ({ analysisData, trendData, forecastData, alerts, onSimulate, on
                     <div className="monitor-stat">
                         <label>Forest Coverage</label>
                         <div className="stat-value-group">
-                            <span className="stat-val">{indicators.forest_coverage || 87.3}%</span>
-                            <div className="mini-gauge"><div style={{ width: `${indicators.forest_coverage || 87.3}%` }}></div></div>
+                            <span className="stat-val">{liveForestCoverage}%</span>
+                            <div className="mini-gauge"><div style={{ width: `${liveForestCoverage}%` }}></div></div>
                         </div>
                     </div>
                     <div className="monitor-stat">
                         <label>Avg NDVI Index</label>
-                        <span className="stat-val">{indicators.ndvi || 0.82}</span>
+                        <span className="stat-val">{liveNDVI}</span>
                     </div>
                     <div className="monitor-stat">
                         <label>Biomass Est.</label>
-                        <span className="stat-val">{indicators.biomass || 342} <small>t/ha</small></span>
+                        <span className="stat-val">{liveBiomass} <small>t/ha</small></span>
                     </div>
                 </div>
             </div>

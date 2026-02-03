@@ -15,6 +15,10 @@ class SatelliteProcessor:
         """
         Divides the bounding box into a grid and generates features for each cell.
         """
+        # Ensure consistency for the same location
+        seed = int((min_lat + min_lng) * 1000000)
+        random.seed(seed)
+        
         grid_cells = []
         lat_step = (max_lat - min_lat) / self.grid_size
         lng_step = (max_lng - min_lng) / self.grid_size
