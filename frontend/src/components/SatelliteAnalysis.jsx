@@ -1,120 +1,89 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { X, Activity, BarChart3, AlertTriangle, Layers, Cpu, Compass, Zap, HelpCircle, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { X, Activity, BarChart3, AlertTriangle, Layers, Cpu, Compass, Zap, HelpCircle, Loader2, Calendar } from 'lucide-react';
 
 const SatelliteAnalysis = ({ analysisData, onClose }) => {
-    const [mode, setMode] = useState('historical'); // 'historical' or 'simulation'
+    const [mode, setMode] = useState('evolution');
+    const [selectedYear, setSelectedYear] = useState(2025);
     const [sliderValue, setSliderValue] = useState(50);
     const [policySliders, setPolicySliders] = useState({ urban: 30, conservation: 20 });
     const [activeBand, setActiveBand] = useState('RGB');
     const [terminalLogs, setTerminalLogs] = useState([]);
-    const [imgLoading, setImgLoading] = useState(true);
+
+    // DECOUPLED LOADING STATES
+    const [loadStatus, setLoadStatus] = useState({ baseline: false, comparison: false });
+    const [useDemoFallback, setUseDemoFallback] = useState(false);
+
     const terminalRef = useRef(null);
 
-    // REAL-TIME IMAGERY: Switching to Yandex Static API (High reliability for demo without token hurdles)
     const lat = analysisData?.location?.lat || 13.0827;
     const lng = analysisData?.location?.lng || 80.2707;
 
-    // Yandex Static API: No token usually required for light demo traffic
-    const imgPresent = `https://static-maps.yandex.ru/1.x/?ll=${lng},${lat}&z=14&l=sat&size=600,450`;
+    const getSatelliteUrl = (year, isBaseline = false) => {
+        if (useDemoFallback) return (isBaseline || year >= 2024) ? "/satellite/present.png" : "/satellite/past.png";
+        if (year >= 2024) return `https://static-maps.yandex.ru/1.x/?ll=${lng},${lat}&z=14&l=sat&size=600,450`;
+        return `https://static-maps.yandex.ru/1.x/?ll=${lng},${lat}&z=13&l=sat&size=600,450`;
+    };
 
-    // Historical and Future
-    const imgPast = "/satellite/past.png";
+    const imgPresent = useMemo(() => getSatelliteUrl(2024, true), [lat, lng, useDemoFallback]);
+    const imgHistorical = useMemo(() => getSatelliteUrl(selectedYear), [lat, lng, selectedYear, useDemoFallback]);
     const imgFuture = "/satellite/future.png";
 
-    const [imgError, setImgError] = useState(false);
+    // LIFECYCLE: Reset comparison on parameter change
+    useEffect(() => {
+        setLoadStatus(p => ({ ...p, comparison: false }));
+        // Fail-safe to prevent stuck spinner
+        const t = setTimeout(() => setLoadStatus(p => ({ ...p, comparison: true })), 4000);
+        return () => clearTimeout(t);
+    }, [selectedYear, mode]);
 
-    // AI Reasoning Log Simulation
+    // LIFECYCLE: Reset baseline only on location change
+    useEffect(() => {
+        setLoadStatus(p => ({ ...p, baseline: false }));
+        const t = setTimeout(() => setLoadStatus(p => ({ ...p, baseline: true })), 4000);
+        return () => clearTimeout(t);
+    }, [lat, lng]);
+
+    // AI LOGS
     useEffect(() => {
         const logs = [
-            `ORBITAL LINK: Established via G-SAT [${lat.toFixed(2)}, ${lng.toFixed(2)}]`,
-            "Spectral targets validated. Baseline: 2024.",
-            "Bio-Analyst 'Gaea' initializing causal neural net...",
-            "Telemetry suggests high soil moisture variance.",
-            "Ready for policy simulation."
+            `ORBITAL_LINK: Established [${lat.toFixed(4)}N, ${lng.toFixed(4)}E]`,
+            `TEMP_RESOLUTION: epoch ${selectedYear}`,
+            "SPECTRAL_SCAN: Validating habitat baseline.",
+            "AI_GAEA: Neural engine ready."
         ];
-
+        setTerminalLogs([]);
         let i = 0;
         const interval = setInterval(() => {
             if (i < logs.length) {
-                addLog(logs[i]);
+                const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                setTerminalLogs(prev => [...prev.slice(-15), { timestamp, msg: logs[i] }]);
                 i++;
             } else {
                 clearInterval(interval);
             }
-        }, 1000);
+        }, 500);
         return () => clearInterval(interval);
-    }, [lat, lng]);
+    }, [selectedYear, mode, lat, lng]);
 
-    const addLog = (msg) => {
-        const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        setTerminalLogs(prev => [...prev.slice(-15), { timestamp, msg }]);
-    };
-
-    useEffect(() => {
-        if (terminalRef.current) {
-            terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
-        }
-    }, [terminalLogs]);
-
-    // FUNCTIONAL SIMULATION ENGINE (Amplified for visible impact)
-    const handlePolicyChange = (key, val) => {
-        setPolicySliders(prev => ({ ...prev, [key]: parseInt(val) }));
-        const currentVal = parseInt(val);
-
-        if (key === 'urban' && currentVal > 60) {
-            addLog(`!!! DANGER: Habitat connectivity in Sector [${lng.toFixed(1)}] dropping below 30% !!!`);
-        } else if (key === 'conservation' && currentVal > 70) {
-            addLog(`SIGNAL: Restoration corridors established. Genetic flow increasing.`);
-        }
-    };
-    const isSim = mode === 'simulation';
-
+    const isSim = mode === 'projection';
     const calculateMetrics = () => {
         if (!isSim) {
+            const yearDiff = 2024 - Math.min(2024, selectedYear);
             return [
-                { label: 'Habitat Density', value: '78.3%', change: '-14%', trend: 'down' },
-                { label: 'Species Index', value: '7.5', change: '-1.2', trend: 'down' },
-                { label: 'Moisture Level', value: '44%', change: '+5%', trend: 'up' },
-                { label: 'Carbon Sink', value: '1.2t', change: '-0.3t', trend: 'down' }
+                { label: 'Tree Cover', value: `${(78.3 + yearDiff * 1.5).toFixed(1)}%`, change: `+${(yearDiff * 1.5).toFixed(1)}%`, trend: 'up' },
+                { label: 'Urban Grid', value: `${Math.max(5, 40 - (yearDiff * 2.2)).toFixed(1)}%`, change: `-${(yearDiff * 1.8).toFixed(1)}%`, trend: 'down' },
+                { label: 'NDVI (Avg)', value: (0.75 + (yearDiff * 0.01)).toFixed(3), change: 'STABLE', trend: 'up' },
+                { label: 'Sensor Mode', value: selectedYear.toString(), change: 'LIVE', trend: 'neutral' }
             ];
         } else {
-            // DRAMATIC SIMULATION MATH
-            const urbanFactor = policySliders.urban / 100; // 0 to 1
-            const conservationFactor = policySliders.conservation / 100; // 0 to 1
-
-            // Worst case: Urban is high, conservation is low
+            const urbanFactor = policySliders.urban / 100;
+            const conservationFactor = policySliders.conservation / 100;
             const habitatLoss = (urbanFactor * 60) - (conservationFactor * 25);
-            const speciesImpact = (urbanFactor * 4) - (conservationFactor * 2);
-            const tempImpact = (urbanFactor * 3.5) - (conservationFactor * 1.2);
-
-            const currentHabitat = 78.3 - habitatLoss;
-            const currentSpecies = 7.5 - speciesImpact;
-
             return [
-                {
-                    label: 'Projected Habitat',
-                    value: `${Math.max(2, currentHabitat).toFixed(1)}%`,
-                    change: habitatLoss > 0 ? `-${habitatLoss.toFixed(1)}%` : `+${Math.abs(habitatLoss).toFixed(1)}%`,
-                    trend: habitatLoss > 10 ? 'down' : 'up'
-                },
-                {
-                    label: 'Survival Index',
-                    value: Math.max(0.5, currentSpecies).toFixed(1),
-                    change: currentSpecies < 4 ? 'CRITICAL' : 'RECOVERING',
-                    trend: currentSpecies < 4 ? 'down' : 'up'
-                },
-                {
-                    label: 'Regional Temp',
-                    value: `+${Math.max(0.2, tempImpact).toFixed(1)}°C`,
-                    change: tempImpact > 1.5 ? 'WARMING' : 'STABLE',
-                    trend: tempImpact > 1.5 ? 'down' : 'up'
-                },
-                {
-                    label: 'Extinction Risk',
-                    value: habitatLoss > 40 ? 'CATASTROPHIC' : 'MODERATE',
-                    change: 'AUTO-GEN',
-                    trend: habitatLoss > 40 ? 'down' : 'up'
-                }
+                { label: 'Projected Habitat', value: `${Math.max(2, 78.3 - habitatLoss).toFixed(1)}%`, change: `-${habitatLoss.toFixed(1)}%`, trend: 'down' },
+                { label: 'Survival Index', value: (7.5 - ((urbanFactor * 4) - (conservationFactor * 2))).toFixed(1), change: 'PREDICTIVE', trend: 'down' },
+                { label: 'Heat Delta', value: `+${((urbanFactor * 4) - (conservationFactor * 1.5)).toFixed(1)}°C`, change: 'WARMING', trend: 'down' },
+                { label: 'Eco-Risk', value: habitatLoss > 30 ? 'ELEVATED' : 'MODERATE', change: 'ALGO-GEN', trend: 'down' }
             ];
         }
     };
@@ -123,14 +92,14 @@ const SatelliteAnalysis = ({ analysisData, onClose }) => {
 
     return (
         <div className="satellite-modal-overlay">
-            <div className="satellite-modal-content glass-panel" style={{ background: '#0a110a' }}>
+            <div className="satellite-modal-content glass-panel" style={{ background: '#0a110a', maxWidth: '1100px' }}>
                 <div className="modal-header">
                     <div className="header-info">
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                             <Cpu size={28} className="text-neon-green" />
                             <div>
-                                <h2 style={{ letterSpacing: '2px' }}>ECOLOGICAL DIGITAL TWIN v2.4</h2>
-                                <span className="location-tag">LIVE FEED | COORD: {lat.toFixed(4)}N, {lng.toFixed(4)}E</span>
+                                <h2 style={{ letterSpacing: '2px' }}>ECOLOGICAL DIGITAL TWIN v2.5</h2>
+                                <span className="location-tag">COORD: {lat.toFixed(3)}N, {lng.toFixed(3)}E</span>
                             </div>
                         </div>
                     </div>
@@ -139,49 +108,72 @@ const SatelliteAnalysis = ({ analysisData, onClose }) => {
                     </button>
                 </div>
 
-                <div className="modal-body">
-                    {/* Perspective Selector */}
-                    <div className="comparison-section">
+                <div className="modal-body" style={{ display: 'flex', gap: '25px' }}>
+                    <div className="comparison-section" style={{ flex: 1.2 }}>
                         <div className="mode-toggle-group">
-                            <button className={`mode-btn ${mode === 'historical' ? 'active' : ''}`} onClick={() => setMode('historical')}>
-                                HISTORICAL (REAL VIEW vs 2015)
+                            <button className={`mode-btn ${mode === 'evolution' ? 'active' : ''}`} onClick={() => setMode('evolution')}>
+                                <Calendar size={14} /> HISTORICAL EVOLUTION
                             </button>
-                            <button className={`mode-btn ${mode === 'simulation' ? 'active' : ''}`} onClick={() => setMode('simulation')}>
-                                FUTURE (REAL VIEW vs 2035)
+                            <button className={`mode-btn ${mode === 'projection' ? 'active' : ''}`} onClick={() => setMode('projection')}>
+                                <Zap size={14} /> FUTURE PROJECTION (2035)
                             </button>
                         </div>
 
-                        <div className="comparison-container" style={{ background: '#111' }}>
-                            {imgLoading && !imgError && (
-                                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 5, color: 'var(--neon-green)', textAlign: 'center' }}>
-                                    <Loader2 className="animate-spin" size={32} />
-                                    <p style={{ fontSize: '0.6rem', marginTop: '10px' }}>CONNECTING TO ORBITAL LINK...</p>
+                        {mode === 'evolution' && (
+                            <div className="timeline-selector card glass-panel mb-3">
+                                <span style={{ fontSize: '0.7rem', color: 'var(--neon-green)', fontWeight: 'bold' }}>YEAR:</span>
+                                <div className="timeline-track-container" style={{ flex: 1 }}>
+                                    <input
+                                        type="range"
+                                        min="2010"
+                                        max="2024"
+                                        step="1"
+                                        value={selectedYear > 2024 ? 2024 : selectedYear}
+                                        onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                                        className="timeline-slider"
+                                    />
+                                    <div className="timeline-years">
+                                        {[2010, 2014, 2018, 2021, 2024].map(y => (
+                                            <span key={y} className={selectedYear === y ? 'active' : ''}>{y}</span>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="year-display">{selectedYear}</div>
+                            </div>
+                        )}
+
+                        <div className="comparison-container" style={{ background: '#111', minHeight: '340px', position: 'relative', overflow: 'hidden' }}>
+                            {(!loadStatus.baseline || !loadStatus.comparison) && (
+                                <div className="sync-indicator">
+                                    <Loader2 className="animate-spin" size={24} color="var(--neon-green)" />
+                                    <span>ORBITAL SYNC...</span>
                                 </div>
                             )}
-                            {imgError && (
-                                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 5, color: '#ff4d4d', textAlign: 'center' }}>
-                                    <AlertTriangle size={32} />
-                                    <p style={{ fontSize: '0.6rem', marginTop: '10px' }}>SATELLITE DOWNLINK FAILED</p>
-                                </div>
-                            )}
+
                             <img
+                                key={`base-${imgPresent}`}
                                 src={imgPresent}
-                                alt="Current Satellite"
+                                alt="Baseline"
                                 className="comparison-image"
-                                onLoad={() => setImgLoading(false)}
-                                onError={() => { setImgError(true); setImgLoading(false); }}
-                                style={{ opacity: imgLoading ? 0 : 1, transition: 'opacity 0.5s' }}
+                                onLoad={() => setLoadStatus(p => ({ ...p, baseline: true }))}
+                                onError={() => setUseDemoFallback(true)}
+                                style={{ visibility: loadStatus.baseline ? 'visible' : 'hidden' }}
                             />
-                            <div
-                                className="comparison-overlay"
+
+                            <img
+                                key={`overlay-${isSim ? imgFuture : imgHistorical}`}
+                                src={isSim ? imgFuture : imgHistorical}
+                                alt="Comparison"
+                                className="comparison-image-overlay"
+                                onLoad={() => setLoadStatus(p => ({ ...p, comparison: true }))}
+                                onError={() => setUseDemoFallback(true)}
                                 style={{
+                                    visibility: loadStatus.comparison ? 'visible' : 'hidden',
                                     clipPath: `inset(0 0 0 ${sliderValue}%)`,
-                                    backgroundImage: `url(${isSim ? imgFuture : imgPast})`,
-                                    backgroundSize: 'cover',
-                                    filter: activeBand === 'NDVI' ? 'sepia(1) hue-rotate(90deg) saturate(3)' : activeBand === 'THERMAL' ? 'invert(1) hue-rotate(180deg)' : 'none',
-                                    zIndex: 2
+                                    filter: selectedYear < 2015 && !isSim ? 'contrast(0.7) brightness(1.2) grayscale(0.2) blur(0.2px)' : 'none'
                                 }}
-                            ></div>
+                            />
+
                             <input
                                 type="range"
                                 min="0"
@@ -191,12 +183,14 @@ const SatelliteAnalysis = ({ analysisData, onClose }) => {
                                 className="comparison-slider"
                                 style={{ zIndex: 10 }}
                             />
-                            <div className="label-past" style={{ zIndex: 5 }}>REAL SATELLITE (CURRENT)</div>
-                            <div className="label-present" style={{ color: isSim ? '#ff4d4d' : 'var(--neon-green)', zIndex: 5 }}>{isSim ? '2035 PROJECTION' : '2015 HISTORICAL'}</div>
+
+                            <div className="label-past">BASELINE (2024)</div>
+                            <div className="label-present" style={{ color: isSim ? '#ff4d4d' : 'var(--neon-green)' }}>
+                                {isSim ? 'PROJECTED 2035' : `EPOCH ${selectedYear}`}
+                            </div>
                         </div>
 
                         <div className="band-selector">
-                            <span style={{ fontSize: '0.65rem', color: '#555', fontWeight: '800', alignSelf: 'center' }}>VIEWBAND:</span>
                             {['RGB', 'NDVI', 'THERMAL'].map(band => (
                                 <div key={band} className={`band-pill ${activeBand === band ? 'active' : ''}`} onClick={() => setActiveBand(band)}>
                                     {band}
@@ -208,40 +202,38 @@ const SatelliteAnalysis = ({ analysisData, onClose }) => {
                             {terminalLogs.map((log, i) => (
                                 <div key={i} className="terminal-line">
                                     <span className="timestamp">[{log.timestamp}]</span>
-                                    <span className="prefix">AI_ANALYST:</span>
+                                    <span style={{ color: '#666' }}>SYS:</span>
                                     <span className="msg">{log.msg}</span>
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    {/* Controls & Metrics */}
-                    <div className="analysis-section">
+                    <div className="analysis-section" style={{ flex: 0.8 }}>
                         {isSim && (
-                            <div className="analysis-card mb-4" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
-                                <h3 className="section-title"><Zap size={18} color="var(--risk-high)" /> SIMULATION PARAMETERS</h3>
+                            <div className="analysis-card mb-4" style={{ background: 'rgba(255, 77, 77, 0.05)', border: '1px solid rgba(255, 77, 77, 0.2)' }}>
+                                <h3 className="section-title"><Zap size={18} color="#ff4d4d" /> SIMULATION</h3>
                                 <div className="simulation-controls">
                                     <div className="control-item">
-                                        <label>Urban Sprawl (Policy Deficit) <span>{policySliders.urban}%</span></label>
-                                        <input type="range" min="0" max="100" value={policySliders.urban} onChange={(e) => handlePolicyChange('urban', e.target.value)} />
+                                        <label>Urban Expansion <span>{policySliders.urban}%</span></label>
+                                        <input type="range" min="0" max="100" value={policySliders.urban} onChange={(e) => setPolicySliders(p => ({ ...p, urban: e.target.value }))} />
                                     </div>
                                     <div className="control-item">
-                                        <label>Conservation Funding <span>{policySliders.conservation}%</span></label>
-                                        <input type="range" min="0" max="100" value={policySliders.conservation} onChange={(e) => handlePolicyChange('conservation', e.target.value)} />
+                                        <label>Conservation <span>{policySliders.conservation}%</span></label>
+                                        <input type="range" min="0" max="100" value={policySliders.conservation} onChange={(e) => setPolicySliders(p => ({ ...p, conservation: e.target.value }))} />
                                     </div>
-                                    <p style={{ fontSize: '0.65rem', color: '#555', marginTop: '5px' }}>Adjusting these sliders will live-recalculate the 2035 ecological forecast metrics below.</p>
                                 </div>
                             </div>
                         )}
 
                         <div className="analysis-card mb-4">
-                            <h3><Activity size={18} /> {isSim ? 'REAL-TIME 2035 PROJECTION' : 'ECOLOGICAL AUDIT (CURRENT)'}</h3>
+                            <h3 className="section-title"><Activity size={18} /> {isSim ? '2035 IMPACT' : `${selectedYear} STATE`}</h3>
                             <div className="metrics-grid">
                                 {metrics.map(m => (
                                     <div key={m.label} className="metric-box">
                                         <label>{m.label}</label>
                                         <div className="metric-value-row">
-                                            <span style={{ color: isSim && m.trend === 'down' ? '#ff4d4d' : 'white' }}>{m.value}</span>
+                                            <span>{m.value}</span>
                                             <span className={`trend-${m.trend}`}>{m.change}</span>
                                         </div>
                                     </div>
@@ -250,21 +242,15 @@ const SatelliteAnalysis = ({ analysisData, onClose }) => {
                         </div>
 
                         <div className="analysis-card">
-                            <h3><Compass size={18} /> CAUSAL BREAKDOWN</h3>
+                            <h3 className="section-title"><Compass size={18} /> CLASSIFICATION</h3>
                             <div className="threat-chart">
                                 {[
-                                    { label: 'Habitat Fragment', val: isSim ? Math.min(100, 75 + policySliders.urban * 0.3) : 75, color: '#ff4d4d' },
-                                    { label: 'Moisture Loss', val: isSim ? Math.min(100, 55 + policySliders.urban * 0.2) : 55, color: '#f1c40f' },
-                                    { label: 'Protection Coverage', val: isSim ? Math.min(100, policySliders.conservation * 1.5) : 30, color: '#39ff14' }
+                                    { label: 'Canopy Density', val: isSim ? Math.max(5, 75 - (policySliders.urban * 0.4)) : Math.min(100, 75 + (2024 - selectedYear) * 1.5), color: '#39ff14' },
+                                    { label: 'Built Env.', val: isSim ? Math.min(100, 45 + (policySliders.urban * 0.5)) : Math.max(5, 45 - (2024 - selectedYear) * 2), color: '#ff4d4d' }
                                 ].map(t => (
                                     <div key={t.label} className="chart-row">
-                                        <div className="row-info">
-                                            <span>{t.label}</span>
-                                            <span>{t.val.toFixed(0)}%</span>
-                                        </div>
-                                        <div className="bar-bg">
-                                            <div className="bar-fill" style={{ width: `${t.val}%`, backgroundColor: t.color }}></div>
-                                        </div>
+                                        <div className="row-info"><span>{t.label}</span><span>{Math.round(t.val)}%</span></div>
+                                        <div className="bar-bg"><div className="bar-fill" style={{ width: `${t.val}%`, backgroundColor: t.color }}></div></div>
                                     </div>
                                 ))}
                             </div>
@@ -272,6 +258,34 @@ const SatelliteAnalysis = ({ analysisData, onClose }) => {
                     </div>
                 </div>
             </div>
+
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                .sync-indicator {
+                    position: absolute;
+                    top: 15px;
+                    right: 15px;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    background: rgba(0,0,0,0.8);
+                    padding: 8px 15px;
+                    border-radius: 4px;
+                    border: 1px solid var(--neon-green);
+                    z-index: 21;
+                    color: var(--neon-green);
+                    font-size: 0.7rem;
+                    font-weight: bold;
+                }
+                .comparison-image-overlay {
+                    position: absolute;
+                    inset: 0;
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                    pointer-events: none;
+                }
+            `}} />
         </div>
     );
 };

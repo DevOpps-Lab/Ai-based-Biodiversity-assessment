@@ -1063,6 +1063,82 @@ input[type="range"] {
   opacity: 0.5;
 }
 
+/* TIMELINE SLIDER ENHANCEMENTS */
+.timeline-selector {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 12px 20px;
+  margin-bottom: 20px;
+}
+
+.timeline-track-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.timeline-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  outline: none;
+}
+
+.timeline-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  background: var(--neon-green);
+  border: 4px solid #000;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 10px var(--neon-green);
+  transition: transform 0.2s;
+}
+
+.timeline-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.timeline-years {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 5px;
+}
+
+.timeline-years span {
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #444;
+  transition: all 0.3s;
+}
+
+.timeline-years span.active {
+  color: var(--neon-green);
+  text-shadow: 0 0 5px var(--neon-green);
+}
+
+.year-display {
+  background: #000;
+  color: var(--neon-green);
+  font-family: 'Courier New', Courier, monospace;
+  font-weight: 800;
+  font-size: 1.1rem;
+  padding: 5px 12px;
+  border: 1px solid var(--neon-green);
+  border-radius: 4px;
+  box-shadow: inset 0 0 10px rgba(57, 255, 20, 0.2);
+  min-width: 65px;
+  text-align: center;
+}
+
 .inspector-layout {
   display: flex;
   height: 100%;
