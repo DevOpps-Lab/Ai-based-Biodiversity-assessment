@@ -519,7 +519,8 @@ input[type="range"] {
   height: 100vh;
   background-color: var(--bg-darker);
   position: relative;
-  overflow: hidden;
+  overflow-y: auto;
+  scroll-behavior: smooth;
   display: flex;
   flex-direction: column;
 }
@@ -796,6 +797,104 @@ input[type="range"] {
 .feature-card {
   padding: 40px;
   transition: all 0.3s;
+}
+
+/* TECHNOLOGY SECTION STYLES */
+.landing-tech {
+  padding: 100px 80px;
+  background: linear-gradient(180deg, var(--bg-darker), var(--bg-dark));
+  position: relative;
+  z-index: 10;
+}
+
+.tech-container {
+  display: flex;
+  gap: 60px;
+  align-items: center;
+}
+
+.tech-stack-visual {
+  flex: 1.5;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.stack-layer {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(57, 255, 20, 0.1);
+  transition: all 0.3s;
+}
+
+.stack-layer:hover {
+  border-color: var(--neon-green);
+  transform: translateX(10px);
+  background: rgba(57, 255, 20, 0.05);
+}
+
+.layer-tag {
+  font-size: 0.6rem;
+  font-weight: 900;
+  color: var(--neon-green);
+  letter-spacing: 2px;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.stack-layer h4 {
+  font-size: 1.1rem;
+  margin-bottom: 5px;
+  color: #fff;
+}
+
+.stack-layer p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.tech-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.detail-item {
+  display: flex;
+  gap: 20px;
+}
+
+.detail-icon {
+  width: 50px;
+  height: 50px;
+  background: rgba(57, 255, 20, 0.1);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--neon-green);
+  flex-shrink: 0;
+}
+
+.detail-text h4 {
+  font-size: 1.2rem;
+  margin-bottom: 8px;
+  color: #fff;
+}
+
+.detail-text p {
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+@media (max-width: 968px) {
+  .tech-container {
+    flex-direction: column;
+  }
 }
 
 .feature-icon {
@@ -1084,6 +1183,7 @@ input[type="range"] {
 
 .timeline-slider {
   -webkit-appearance: none;
+  appearance: none;
   width: 100%;
   height: 4px;
   background: rgba(255, 255, 255, 0.1);
@@ -1093,6 +1193,7 @@ input[type="range"] {
 
 .timeline-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
+  appearance: none;
   width: 18px;
   height: 18px;
   background: var(--neon-green);

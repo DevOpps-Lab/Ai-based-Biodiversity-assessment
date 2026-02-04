@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Leaf, Shield, Zap, BarChart3, Globe, ArrowRight } from 'lucide-react';
+import { Leaf, Shield, Zap, BarChart3, Globe, ArrowRight, Cpu } from 'lucide-react';
 
 const LandingPage = ({ onLaunch }) => {
     return (
@@ -94,6 +94,55 @@ const LandingPage = ({ onLaunch }) => {
                             <p>{feature.desc}</p>
                         </motion.div>
                     ))}
+                </div>
+            </section>
+
+            <section id="technology" className="landing-tech">
+                <div className="section-header">
+                    <h2>The Technology Stack</h2>
+                    <p>Fusing geospatial intelligence with neural reasoning.</p>
+                </div>
+
+                <div className="tech-container">
+                    <div className="tech-stack-visual glass-panel">
+                        <div className="stack-layer">
+                            <span className="layer-tag">INTERFACE</span>
+                            <h4>React & Framer Motion</h4>
+                            <p>High-performance UI with real-time state synchronization.</p>
+                        </div>
+                        <div className="stack-layer">
+                            <span className="layer-tag">API LAYER</span>
+                            <h4>FastAPI Intelligence</h4>
+                            <p>Asynchronous Python backend for sub-second risk calculations.</p>
+                        </div>
+                        <div className="stack-layer">
+                            <span className="layer-tag">AI CORE</span>
+                            <h4>Random Forest Logic</h4>
+                            <p>Multi-parameter classification of spectral signatures.</p>
+                        </div>
+                        <div className="stack-layer">
+                            <span className="layer-tag">DATA SOURCE</span>
+                            <h4>Multispectral Satellite Pipes</h4>
+                            <p>Direct integration with orbital remote sensing telemetry.</p>
+                        </div>
+                    </div>
+
+                    <div className="tech-details">
+                        <div className="detail-item">
+                            <div className="detail-icon"><Cpu size={24} /></div>
+                            <div className="detail-text">
+                                <h4>Neural Risk Engine</h4>
+                                <p>Our proprietary GAEA-ML engine reasons through NDVI, thermal, and land-use data to detect anomalies.</p>
+                            </div>
+                        </div>
+                        <div className="detail-item">
+                            <div className="detail-icon"><Globe size={24} /></div>
+                            <div className="detail-text">
+                                <h4>Geospatial Scaling</h4>
+                                <p>Elastic grid systems allow analysis from local 30m resolution to regional continental monitoring.</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 
