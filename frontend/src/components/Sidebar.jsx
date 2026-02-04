@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, AreaChart, Area } from 'recharts';
 import { Leaf, AlertTriangle, Thermometer, Droplets, Info, RefreshCw, Zap, FileText, ShieldAlert, Activity, BarChart3, Search } from 'lucide-react';
 
 const Sidebar = ({ analysisData, trendData, forecastData, alerts, onSimulate, onDownloadReport, onOpenSatellite, onOpenMitigation, loading, isExporting }) => {
@@ -123,28 +123,66 @@ const Sidebar = ({ analysisData, trendData, forecastData, alerts, onSimulate, on
                 </div>
             </div>
 
-            {/* AI ANALYSIS PANEL (Forecast) */}
             <div className="card glass-panel">
                 <h3 className="section-title"><Zap size={18} color="var(--neon-green)" /> 7-Day Risk Forecast</h3>
                 <div className="forecast-chart">
                     <ResponsiveContainer width="100%" height={120}>
-                        <BarChart data={forecastData}>
+                        <AreaChart data={forecastData}>
+                            <defs>
+                                <linearGradient id="colorRisk" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="var(--neon-green)" stopOpacity={0.6} />
+                                    <stop offset="95%" stopColor="var(--neon-green)" stopOpacity={0} />
+                                </linearGradient>
+                            </defs>
                             <XAxis dataKey="date" hide />
+                            <YAxis hide domain={[0, 10]} />
                             <Tooltip
-                                contentStyle={{ background: '#000', border: 'none', borderRadius: '4px', fontSize: '10px' }}
-                                labelStyle={{ display: 'none' }}
+                                content={({ active, payload }) => {
+                                    if (active && payload && payload.length) {
+                                        return (
+                                            <div className="custom-tooltip">
+                                                <p className="tooltip-date">{payload[0].payload.date}</p>
+                                                <p className="tooltip-val">Risk: <span>{payload[0].value}</span></p>
+                                                <p className="tooltip-event">{payload[0].payload.event}</p>
+                                            </div>
+                                        );
+                                    }
+                                    return null;
+                                }}
                             />
-                            <Bar
+                            <Area
+                                type="monotone"
                                 dataKey="risk_score"
-                                radius={[2, 2, 0, 0]}
-                                fill="var(--neon-green)"
+                                stroke="var(--neon-green)"
+                                fillOpacity={1}
+                                fill="url(#colorRisk)"
+                                strokeWidth={2}
                             />
-                        </BarChart>
+                        </AreaChart>
                     </ResponsiveContainer>
                     <div className="forecast-labels">
-                        <span>Day 1</span>
-                        <span>Day 7</span>
+                        <span>NOW</span>
+                        <span>+7 DAYS</span>
                     </div>
+
+                    {forecastData && forecastData.length > 0 && (
+                        <div className="forecast-highlight">
+                            <div className="highlight-header">
+                                <AlertTriangle size={12} color="var(--risk-high)" />
+                                <span>CRITICAL FORECAST WINDOW</span>
+                            </div>
+                            <div className="highlight-body">
+                                {(() => {
+                                    const keyEvent = [...forecastData].sort((a, b) => b.risk_score - a.risk_score)[0];
+                                    return (
+                                        <>
+                                            <strong>{keyEvent.date}</strong> — {keyEvent.event || "Monitoring for anomalies..."}
+                                        </>
+                                    );
+                                })()}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -258,7 +296,67 @@ const Sidebar = ({ analysisData, trendData, forecastData, alerts, onSimulate, on
                 .btn-mini-link:hover {
                     opacity: 1;
                     background: rgba(57, 255, 20, 0.1);
-                    box-shadow: 0 0 10px rgba(57, 255, 20, 0.2);
+                    box-shadow: 0 0 100px rgba(57, 255, 20, 0.2);
+                }
+                .custom-tooltip {
+                    background: rgba(0, 0, 0, 0.9);
+                    border: 1px solid var(--neon-green);
+                    padding: 10px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+                    min-width: 140px;
+                    backdrop-filter: blur(5px);
+                }
+                .tooltip-date {
+                    font-size: 0.65rem;
+                    color: var(--text-secondary);
+                    margin-bottom: 4px;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                }
+                .tooltip-val {
+                    font-size: 0.9rem;
+                    font-weight: 800;
+                    margin-bottom: 4px;
+                }
+                .tooltip-val span {
+                    color: var(--neon-green);
+                }
+                .tooltip-event {
+                    font-size: 0.7rem;
+                    color: #fff;
+                    font-style: italic;
+                    opacity: 0.9;
+                    border-top: 1px solid rgba(255,255,255,0.1);
+                    padding-top: 4px;
+                    margin-top: 4px;
+                }
+                .forecast-highlight {
+                    margin-top: 15px;
+                    background: rgba(231, 76, 60, 0.05);
+                    border: 1px solid rgba(231, 76, 60, 0.2);
+                    border-radius: 8px;
+                    padding: 10px;
+                }
+                .highlight-header {
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    margin-bottom: 6px;
+                }
+                .highlight-header span {
+                    font-size: 0.65rem;
+                    font-weight: 800;
+                    color: var(--risk-high);
+                    letter-spacing: 0.5px;
+                }
+                .highlight-body {
+                    font-size: 0.75rem;
+                    line-height: 1.4;
+                    color: var(--text-primary);
+                }
+                .highlight-body strong {
+                    color: var(--neon-green);
                 }
             `}} />
         </div>
