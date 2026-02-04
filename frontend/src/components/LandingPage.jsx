@@ -1,8 +1,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { Leaf, Shield, Zap, BarChart3, Globe, ArrowRight, Cpu } from 'lucide-react';
 
-const LandingPage = ({ onLaunch }) => {
+const LandingPage = () => {
+    const navigate = useNavigate();
+
     return (
         <div className="landing-container">
             {/* Background elements */}
@@ -17,7 +20,7 @@ const LandingPage = ({ onLaunch }) => {
                 <div className="nav-links">
                     <a href="#features">Features</a>
                     <a href="#technology">Technology</a>
-                    <button className="nav-cta" onClick={onLaunch}>Launch Platform</button>
+                    <button className="nav-cta" onClick={() => navigate('/dashboard')}>Launch Platform</button>
                 </div>
             </nav>
 
@@ -35,12 +38,13 @@ const LandingPage = ({ onLaunch }) => {
                         ecological reasoning to provide real-time monitoring and predictive alerts for global ecosystems.
                     </p>
                     <div className="hero-actions">
-                        <button className="primary-cta" onClick={onLaunch}>
+                        <button className="primary-cta" onClick={() => navigate('/dashboard')}>
                             Access Dashboard <ArrowRight size={20} />
                         </button>
                         <button className="secondary-cta">Watch Demo</button>
                     </div>
                 </motion.div>
+                {/* ... (rest of the file remains same) */}
 
                 <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
