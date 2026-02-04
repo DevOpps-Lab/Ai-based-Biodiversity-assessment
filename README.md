@@ -98,4 +98,3 @@ This project is developed for educational and research purposes in biodiversity 
 
 ---
 
-*Developed by the AI-Based Biodiversity Assessment Lab*
