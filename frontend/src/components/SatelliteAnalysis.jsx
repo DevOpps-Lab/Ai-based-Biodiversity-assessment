@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { X, Activity, BarChart3, AlertTriangle, Layers, Cpu, Compass, Zap, HelpCircle, Loader2, Calendar, Target, Scan, Eye, ChevronRight, Binary, Globe } from 'lucide-react';
+import { X, Activity, BarChart3, AlertTriangle, Layers, Cpu, Compass, Zap, HelpCircle, Loader2, Calendar, Target, Scan, Eye, ChevronRight, Binary, Globe, ShieldCheck } from 'lucide-react';
 
-const SatelliteAnalysis = ({ analysisData, onClose }) => {
+const SatelliteAnalysis = ({ analysisData, onClose, onOpenMitigation }) => {
     const [mode, setMode] = useState('evolution');
     const [selectedYear, setSelectedYear] = useState(2024);
     const [comparisonSlider, setComparisonSlider] = useState(50);
@@ -60,13 +60,22 @@ const SatelliteAnalysis = ({ analysisData, onClose }) => {
         const getNarrative = () => {
             const urban = policySliders.urban;
             const conservation = policySliders.conservation;
+
             if (mode === 'projection') {
                 if (urban > 60) return "DANGER: Structural displacement in ecosystem matrix. Habitat corridors are reaching critical fragmentation thresholds.";
                 if (conservation > 60) return "RESTORE: Biogenic signatures are expanding. Neural models detect successful canopy reconnection in 80% of sectors.";
                 return "SIMULATING: Running GAEA-ML models to synthesize anthropogenic-ecological equilibrium for 2035 window.";
             }
+
+            // Use real data reasons if available
+            const reasons = analysisData?.rules?.reasons || [];
+            if (reasons.length > 0) {
+                const randomReason = reasons[Math.floor(Math.random() * reasons.length)];
+                return `ANALYSIS: ${randomReason}`;
+            }
+
             if (selectedYear < 2015) return "HISTORICAL: Accessing vintage orbital archives. Spectral signatures show a 34.2% higher canopy density than 2024 baseline.";
-            return "SYNCING: Aligning bi-temporal orbital feeds. Spatial reasoning in progress for sector [80.27E, 13.08N].";
+            return "SYNCING: Aligning bi-temporal orbital feeds. Spatial reasoning in progress for sector [" + lng.toFixed(2) + "E, " + lat.toFixed(2) + "N].";
         };
 
         const addLog = () => {
@@ -77,7 +86,7 @@ const SatelliteAnalysis = ({ analysisData, onClose }) => {
         addLog();
         const interval = setInterval(addLog, 12000);
         return () => clearInterval(interval);
-    }, [mode, selectedYear, policySliders]);
+    }, [mode, selectedYear, policySliders, analysisData, lat, lng]);
 
     useEffect(() => {
         if (terminalRef.current) terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
@@ -85,23 +94,46 @@ const SatelliteAnalysis = ({ analysisData, onClose }) => {
 
     const isSim = mode === 'projection';
     const metrics = useMemo(() => {
-        if (!isSim) {
-            const diff = 2024 - Math.min(2024, selectedYear);
+        if (isSim) {
+            const u = policySliders.urban / 100;
+            const c = policySliders.conservation / 100;
+            const loss = (u * 60) - (c * 25);
             return [
-                { label: 'Canopy Density', value: `${(78.3 + diff * 1.5).toFixed(1)}%`, trend: 'up', icon: <Eye size={12} /> },
-                { label: 'Built Region', value: `${Math.max(5, 40 - (diff * 2.2)).toFixed(1)}%`, trend: 'down', icon: <Compass size={12} /> },
-                { label: 'NDVI Median', value: (0.75 + (diff * 0.01)).toFixed(3), trend: 'up', icon: <Activity size={12} /> }
+                { label: '2035 Habitat', value: `${Math.max(2, 78.3 - loss).toFixed(1)}%`, trend: 'down', icon: <Zap size={12} /> },
+                { label: 'Survival Stat', value: (7.5 - ((u * 4) - (c * 2))).toFixed(1), trend: 'down', icon: <Activity size={12} /> },
+                { label: 'Heat Delta', value: `+${((u * 4) - (c * 1.5)).toFixed(1)}°C`, trend: 'down', icon: <AlertTriangle size={12} /> }
             ];
         }
-        const u = policySliders.urban / 100;
-        const c = policySliders.conservation / 100;
-        const loss = (u * 60) - (c * 25);
+
+        // Real Data Metrics
+        const indicators = analysisData?.indicators || {};
+        const ndvi = indicators.ndvi || 0.75;
+        const forest = indicators.forest_coverage || 78.3;
+        const temp = indicators.temperature || 24.5;
+
+        const diff = 2024 - Math.min(2024, selectedYear);
+
         return [
-            { label: '2035 Habitat', value: `${Math.max(2, 78.3 - loss).toFixed(1)}%`, trend: 'down', icon: <Zap size={12} /> },
-            { label: 'Survival Stat', value: (7.5 - ((u * 4) - (c * 2))).toFixed(1), trend: 'down', icon: <Activity size={12} /> },
-            { label: 'Heat Delta', value: `+${((u * 4) - (c * 1.5)).toFixed(1)}°C`, trend: 'down', icon: <AlertTriangle size={12} /> }
+            {
+                label: 'Canopy Density',
+                value: `${(forest + (diff * 0.8)).toFixed(1)}%`,
+                trend: diff > 0 ? 'up' : 'stable',
+                icon: <Eye size={12} />
+            },
+            {
+                label: 'NDVI Median',
+                value: (ndvi + (diff * 0.005)).toFixed(3),
+                trend: diff > 0 ? 'up' : 'stable',
+                icon: <Activity size={12} />
+            },
+            {
+                label: 'Thermal Base',
+                value: `${(temp - (diff * 0.2)).toFixed(1)}°C`,
+                trend: diff > 0 ? 'down' : 'stable',
+                icon: <Compass size={12} />
+            }
         ];
-    }, [isSim, selectedYear, policySliders]);
+    }, [isSim, selectedYear, policySliders, analysisData]);
 
     return (
         <div className="satellite-modal-overlay">
@@ -251,7 +283,12 @@ const SatelliteAnalysis = ({ analysisData, onClose }) => {
 
                         {/* METRICS PANEL */}
                         <div className="panel-group">
-                            <h3 className="panel-title">LIVE REASONING</h3>
+                            <div className="label-row" style={{ alignItems: 'center' }}>
+                                <h3 className="panel-title" style={{ margin: 0 }}>LIVE TELEMETRY</h3>
+                                <button className="recovery-trigger" onClick={onOpenMitigation}>
+                                    <ShieldCheck size={12} /> RECOVERY
+                                </button>
+                            </div>
                             <div className="metrics-list">
                                 {metrics.map(m => (
                                     <div key={m.label} className="metric-entry">
@@ -265,6 +302,36 @@ const SatelliteAnalysis = ({ analysisData, onClose }) => {
                                 ))}
                             </div>
                         </div>
+
+                        {/* REASONING CHAIN */}
+                        {!isSim && analysisData?.rules?.reasons?.length > 0 && (
+                            <div className="panel-group reasoning-chain">
+                                <h3 className="panel-title">REASONING CHAIN</h3>
+                                <div className="reason-list">
+                                    {analysisData.rules.reasons.map((r, i) => (
+                                        <div key={i} className="reason-item">
+                                            <div className="reason-bullet" />
+                                            <span className="reason-text">{r}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* TARGET INDICATORS */}
+                        {!isSim && analysisData?.impacts?.length > 0 && (
+                            <div className="panel-group impacts-grid">
+                                <h3 className="panel-title">TARGET INDICATORS</h3>
+                                <div className="impacts-list">
+                                    {analysisData.impacts.slice(0, 3).map((imp, i) => (
+                                        <div key={i} className="impact-pill">
+                                            <span className="group">{imp.group}</span>
+                                            <span className="status">MONITORED</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         {/* AI NARRATIVE TERMINAL */}
                         <div className="panel-group terminal-container">
@@ -482,6 +549,28 @@ const SatelliteAnalysis = ({ analysisData, onClose }) => {
                 .entry-data .value { font-size: 0.9rem; font-weight: 900; color: #fff; }
                 .entry-trend { font-size: 0.55rem; font-weight: 900; padding: 2px 6px; border-radius: 3px; }
                 .entry-trend.up { background: rgba(57, 255, 20, 0.1); color: var(--neon-green); }
+
+                /* NEW: RECOVERY TRIGGER */
+                .recovery-trigger {
+                    background: rgba(57, 255, 20, 0.1);
+                    border: 1px solid rgba(57, 255, 20, 0.2);
+                    color: var(--neon-green);
+                    padding: 4px 10px;
+                    border-radius: 4px;
+                    font-size: 0.6rem;
+                    font-weight: 900;
+                    letter-spacing: 1px;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    cursor: pointer;
+                    transition: all 0.3s;
+                }
+                .recovery-trigger:hover {
+                    background: var(--neon-green);
+                    color: #000;
+                    box-shadow: 0 0 15px rgba(57, 255, 20, 0.4);
+                }
                 .entry-trend.down { background: rgba(255, 77, 77, 0.1); color: #ff4d4d; }
 
                 .terminal-container { background: #020402; border: 1px solid rgba(57, 255, 20, 0.1); border-radius: 8px; overflow: hidden; height: 200px; }
@@ -492,6 +581,20 @@ const SatelliteAnalysis = ({ analysisData, onClose }) => {
                 .terminal-post .time { color: #444; font-size: 0.55rem; }
                 .terminal-post .msg { color: #888; line-height: 1.4; }
                 .terminal-post.intel .msg { color: var(--neon-green); }
+
+                /* REASONING CHAIN STYLES */
+                .reasoning-chain { background: rgba(255, 255, 255, 0.02); padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); }
+                .reason-list { display: flex; flex-direction: column; gap: 10px; }
+                .reason-item { display: flex; align-items: flex-start; gap: 10px; }
+                .reason-bullet { min-width: 4px; height: 4px; background: var(--neon-green); border-radius: 50%; margin-top: 6px; box-shadow: 0 0 5px var(--neon-green); }
+                .reason-text { font-size: 0.65rem; color: #aaa; line-height: 1.4; font-family: 'Inter', sans-serif; font-weight: 500; }
+
+                /* IMPACTS GRID STYLES */
+                .impacts-list { display: flex; flex-wrap: wrap; gap: 8px; }
+                .impact-pill { background: #0a0a0a; border: 1px solid #111; padding: 6px 12px; border-radius: 4px; display: flex; flex-direction: column; gap: 2px; transition: all 0.3s; }
+                .impact-pill:hover { border-color: rgba(57, 255, 20, 0.3); background: rgba(57, 255, 20, 0.02); }
+                .impact-pill .group { font-size: 0.55rem; color: #fff; font-weight: 800; letter-spacing: 0.5px; }
+                .impact-pill .status { font-size: 0.45rem; color: var(--neon-green); font-weight: 950; opacity: 0.6; }
 
                 /* HOLOGRAM ANIMATIONS */
                 .hologram-layer { position: absolute; inset: 0; z-index: 40; pointer-events: none; }

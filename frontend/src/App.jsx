@@ -4,6 +4,7 @@ import LandingPage from './components/LandingPage';
 import Sidebar from './components/Sidebar';
 import MapView from './components/MapView';
 import SatelliteAnalysis from './components/SatelliteAnalysis';
+import MitigationPlan from './components/MitigationPlan';
 
 const API_BASE = 'http://localhost:8000';
 
@@ -18,6 +19,7 @@ function App() {
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [currentCoords, setCurrentCoords] = useState(null);
   const [showSatelliteDeepDive, setShowSatelliteDeepDive] = useState(false);
+  const [showMitigationPlan, setShowMitigationPlan] = useState(false);
 
   const fetchAnalysis = async (coords, params = null) => {
     if (!coords || typeof coords.lat !== 'number') return;
@@ -137,6 +139,7 @@ function App() {
         onSimulate={handleSimulate}
         onDownloadReport={handleDownloadReport}
         onOpenSatellite={() => setShowSatelliteDeepDive(true)}
+        onOpenMitigation={() => setShowMitigationPlan(true)}
         loading={loading}
         isExporting={isGeneratingReport}
       />
@@ -152,6 +155,14 @@ function App() {
         <SatelliteAnalysis
           analysisData={selectedCell}
           onClose={() => setShowSatelliteDeepDive(false)}
+          onOpenMitigation={() => setShowMitigationPlan(true)}
+        />
+      )}
+
+      {showMitigationPlan && (
+        <MitigationPlan
+          analysisData={selectedCell}
+          onClose={() => setShowMitigationPlan(false)}
         />
       )}
     </div>

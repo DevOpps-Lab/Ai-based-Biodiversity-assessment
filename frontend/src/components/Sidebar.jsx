@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { Leaf, AlertTriangle, Thermometer, Droplets, Info, RefreshCw, Zap, FileText, ShieldAlert, Activity, BarChart3, Search } from 'lucide-react';
 
-const Sidebar = ({ analysisData, trendData, forecastData, alerts, onSimulate, onDownloadReport, onOpenSatellite, loading, isExporting }) => {
+const Sidebar = ({ analysisData, trendData, forecastData, alerts, onSimulate, onDownloadReport, onOpenSatellite, onOpenMitigation, loading, isExporting }) => {
     const [simParams, setSimParams] = useState({
         urban_growth_pct: 0,
         temp_increase: 0
@@ -205,7 +205,12 @@ const Sidebar = ({ analysisData, trendData, forecastData, alerts, onSimulate, on
 
             {/* Simulation Options */}
             <div className="card glass-panel sim-panel">
-                <h3 style={{ fontSize: '0.8rem', opacity: 0.8 }}>Future Projection (Simulation)</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <h3 style={{ fontSize: '0.8rem', opacity: 0.8, margin: 0 }}>Future Projection (Simulation)</h3>
+                    <button className="btn-mini-link" onClick={onOpenMitigation}>
+                        <ShieldAlert size={12} /> RECOVERY PLAN
+                    </button>
+                </div>
                 <div className="sim-controls">
                     <input type="range" min="0" max="100" value={simParams.urban_growth_pct} onChange={(e) => setSimParams({ ...simParams, urban_growth_pct: e.target.value })} />
                     <button className="btn-primary" onClick={() => onSimulate(simParams)}>
@@ -231,6 +236,31 @@ const Sidebar = ({ analysisData, trendData, forecastData, alerts, onSimulate, on
                     <span>Current</span>
                 </div>
             </div>
+
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                .btn-mini-link {
+                    background: none;
+                    border: none;
+                    color: var(--neon-green);
+                    opacity: 0.6;
+                    font-size: 0.65rem;
+                    font-weight: 800;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    cursor: pointer;
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    transition: all 0.2s;
+                    letter-spacing: 1px;
+                }
+                .btn-mini-link:hover {
+                    opacity: 1;
+                    background: rgba(57, 255, 20, 0.1);
+                    box-shadow: 0 0 10px rgba(57, 255, 20, 0.2);
+                }
+            `}} />
         </div>
     );
 };
