@@ -93,6 +93,9 @@ The system monitors four primary indicators to determine risk:
 
 ---
 
+## 📺 Demo Video
+Watch the platform in action: [Bio-Risk Intelligence Demo](https://youtu.be/HTevqclV9ak)
+
 ## 📄 License
 This project is developed for educational and research purposes in biodiversity conservation.
 
